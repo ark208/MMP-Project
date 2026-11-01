@@ -1,0 +1,254 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum LostStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+enum FoundStatus {
+  OPEN
+  CLAIMED
+  RESOLVED
+}
+
+enum RideStatus {
+  OPEN
+  FULL
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+enum ListingStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum NotificationType {
+  MATCH
+  CLAIM
+  CHAT
+  RIDE
+  SYSTEM
+}
+
+enum ReportTargetType {
+  USER
+  LOST
+  FOUND
+  LISTING
+  RIDE
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  avatarUrl String?
+  role      UserRole @default(USER)
+  isBanned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lostItems          LostItem[]
+  foundItems         FoundItem[]
+  claimedFoundItems  FoundItem[]       @relation("ClaimedFoundItems")
+  trainTrips         TrainTrip[]
+  createdRides       Ride[]            @relation("CreatedRides")
+  joinedRides        RidePassenger[]
+  listings           Listing[]
+  wishlists          Wishlist[]
+  sentMessages       Message[]
+  notifications      Notification[]
+  filedReports       Report[]          @relation("Reporter")
+  conversations      ConversationParticipant[]
+}
+
+model LostItem {
+  id                 String     @id @default(uuid())
+  userId             String
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  description        String
+  category           String
+  location           String
+  dateLost           DateTime
+  imageUrl           String?
+  status             LostStatus @default(OPEN)
+  matchedFoundItemId String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model FoundItem {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  category        String
+  location        String
+  dateFound       DateTime
+  imageUrl        String?
+  status          FoundStatus @default(OPEN)
+  claimedByUserId String?
+  claimedByUser   User?       @relation("ClaimedFoundItems", fields: [claimedByUserId], references: [id])
+  claimNote       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model TrainTrip {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainNumber        String
+  trainName          String
+  originStation      String
+  destinationStation String
+  departureDate      String
+  departureTime      String
+  coach              String?
+  seat               String?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Ride {
+  id             String          @id @default(uuid())
+  creatorId      String
+  creator        User            @relation("CreatedRides", fields: [creatorId], references: [id], onDelete: Cascade)
+  origin         String
+  destination    String
+  departureTime  DateTime
+  totalSeats     Int
+  availableSeats Int
+  estimatedFare  Float
+  status         RideStatus      @default(OPEN)
+  notes          String?
+  passengers     RidePassenger[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model RidePassenger {
+  id       String   @id @default(uuid())
+  rideId   String
+  ride     Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([rideId, userId])
+}
+
+model Listing {
+  id          String           @id @default(uuid())
+  sellerId    String
+  seller      User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  price       Float
+  category    String
+  condition   ListingCondition @default(GOOD)
+  imageUrls   String[]
+  status      ListingStatus    @default(AVAILABLE)
+  wishlists   Wishlist[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  participants ConversationParticipant[]
+  messages     Message[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Report {
+  id          String           @id @default(uuid())
+  reporterId  String
+  reporter    User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType  ReportTargetType
+  targetId    String
+  reason      String
+  details     String?
+  status      ReportStatus     @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
