@@ -47,6 +47,8 @@ export interface User {
   name: string;
   phone?: string | null;
   avatarUrl?: string | null;
+  department?: string | null;
+  year?: string | null;
   role: UserRole;
   isBanned: boolean;
   createdAt: string;
@@ -131,24 +133,34 @@ export interface ClaimVerificationResponse {
 export interface TrainTrip {
   id: string;
   userId: string;
-  user?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  user?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    avatarUrl?: string | null;
+    department?: string | null;
+    year?: string | null;
+  };
   trainNumber: string;
-  trainName: string;
-  originStation: string;
-  destinationStation: string;
-  departureDate: string;
-  departureTime: string;
+  trainName?: string | null;
+  fromStation?: string;
+  toStation?: string;
+  originStation?: string;
+  destinationStation?: string;
+  date?: string;
+  departureDate?: string;
+  departureTime?: string | null;
   coach?: string | null;
   seat?: string | null;
   notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TrainBuddyMatch {
   trip: TrainTrip;
-  isSameCoach: boolean;
-  distanceHours: number;
+  isSameCoach?: boolean;
+  distanceHours?: number;
 }
 
 // -------------------------------------------------------------------------
@@ -157,18 +169,34 @@ export interface TrainBuddyMatch {
 
 export type RideStatus = 'OPEN' | 'FULL' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
-export interface RidePassenger {
+export interface RideMember {
   id: string;
   rideId: string;
   userId: string;
-  user?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  user?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    avatarUrl?: string | null;
+    department?: string | null;
+    year?: string | null;
+  };
   joinedAt: string;
 }
+
+export type RidePassenger = RideMember;
 
 export interface Ride {
   id: string;
   creatorId: string;
-  creator?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  creator?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    avatarUrl?: string | null;
+    department?: string | null;
+    year?: string | null;
+  };
   origin: string;
   destination: string;
   departureTime: string;
@@ -178,8 +206,9 @@ export interface Ride {
   status: RideStatus;
   notes?: string | null;
   passengers?: RidePassenger[];
-  createdAt: string;
-  updatedAt: string;
+  members?: RideMember[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FareSplitParticipant {
@@ -236,8 +265,11 @@ export interface ListingFilterQuery {
 
 export interface Conversation {
   id: string;
+  isGroup?: boolean;
+  title?: string | null;
+  rideId?: string | null;
   participantIds: string[];
-  participants?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>[];
+  participants?: Array<Pick<User, 'id' | 'name' | 'avatarUrl'> & { department?: string | null; year?: string | null; email?: string }>;
   lastMessage?: Message | null;
   createdAt: string;
   updatedAt: string;
@@ -247,7 +279,7 @@ export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
-  sender?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  sender?: Pick<User, 'id' | 'name' | 'avatarUrl'> & { department?: string | null; year?: string | null; email?: string };
   content: string;
   createdAt: string;
 }

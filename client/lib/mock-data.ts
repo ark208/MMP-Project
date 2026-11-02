@@ -1,4 +1,20 @@
-import type { User, LostItem, FoundItem, Listing, ItemStatus, FoundStatus, HoldingLocation, ListingCondition, ListingStatus } from '@docs/types';
+import type {
+  User,
+  LostItem,
+  FoundItem,
+  Listing,
+  ItemStatus,
+  FoundStatus,
+  HoldingLocation,
+  ListingCondition,
+  ListingStatus,
+  TrainTrip,
+  TrainBuddyMatch,
+  Ride,
+  Conversation,
+  Message,
+  Notification,
+} from '@docs/types';
 
 export interface ExtendedFoundItem extends FoundItem {
   secretQuestion: string;
@@ -13,6 +29,12 @@ export interface MockStore {
   foundItems: ExtendedFoundItem[];
   listings: Listing[];
   wishlistIds: string[];
+  trainTrips: TrainTrip[];
+  buddiesMap: Record<string, TrainBuddyMatch[]>;
+  rides: Ride[];
+  conversations: Conversation[];
+  messages: Record<string, Message[]>;
+  notifications: Notification[];
 }
 
 export const DEFAULT_USER: User = {
@@ -361,46 +383,550 @@ export const INITIAL_LISTINGS: Listing[] = [
   },
 ];
 
-const STORAGE_KEY = 'campusloop_mock_store_v1';
+export const INITIAL_TRAIN_TRIPS: TrainTrip[] = [
+  {
+    id: 'trip_501',
+    userId: 'usr_alex_001',
+    trainNumber: '12951',
+    trainName: 'Mumbai Rajdhani Express',
+    fromStation: 'NDLS',
+    toStation: 'BCT',
+    date: '2026-11-20',
+    departureTime: '16:55',
+    createdAt: '2026-11-01T12:00:00.000Z',
+    updatedAt: '2026-11-01T12:00:00.000Z',
+  },
+  {
+    id: 'trip_502',
+    userId: 'usr_alex_001',
+    trainNumber: '12002',
+    trainName: 'Bhopal Shatabdi',
+    fromStation: 'NDLS',
+    toStation: 'BPL',
+    date: '2026-12-05',
+    departureTime: '06:00',
+    createdAt: '2026-11-02T10:00:00.000Z',
+    updatedAt: '2026-11-02T10:00:00.000Z',
+  },
+];
+
+export const INITIAL_BUDDIES_MAP: Record<string, TrainBuddyMatch[]> = {
+  trip_501: [
+    {
+      trip: {
+        id: 'trip_buddy_01',
+        userId: 'usr_rohan_004',
+        user: {
+          id: 'usr_rohan_004',
+          name: 'Rohan Verma',
+          avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
+          department: 'Computer Science',
+          year: '3rd Year',
+        },
+        trainNumber: '12951',
+        trainName: 'Mumbai Rajdhani Express',
+        fromStation: 'NDLS',
+        toStation: 'BCT',
+        date: '2026-11-20',
+        departureTime: '16:55',
+      },
+      isSameCoach: false,
+      distanceHours: 0,
+    },
+    {
+      trip: {
+        id: 'trip_buddy_02',
+        userId: 'usr_ananya_005',
+        user: {
+          id: 'usr_ananya_005',
+          name: 'Ananya Patel',
+          avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
+          department: 'Electrical Engineering',
+          year: '2nd Year',
+        },
+        trainNumber: '12951',
+        trainName: 'Mumbai Rajdhani Express',
+        fromStation: 'NDLS',
+        toStation: 'BCT',
+        date: '2026-11-20',
+        departureTime: '16:55',
+      },
+      isSameCoach: false,
+      distanceHours: 0,
+    },
+    {
+      trip: {
+        id: 'trip_buddy_03',
+        userId: 'usr_devansh_006',
+        user: {
+          id: 'usr_devansh_006',
+          name: 'Devansh Joshi',
+          avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80',
+          department: 'Mechanical Engineering',
+          year: '4th Year',
+        },
+        trainNumber: '12951',
+        trainName: 'Mumbai Rajdhani Express',
+        fromStation: 'NDLS',
+        toStation: 'BCT',
+        date: '2026-11-20',
+        departureTime: '16:55',
+      },
+      isSameCoach: false,
+      distanceHours: 0,
+    },
+  ],
+  trip_502: [
+    {
+      trip: {
+        id: 'trip_buddy_04',
+        userId: 'usr_sam_006',
+        user: {
+          id: 'usr_sam_006',
+          name: 'Sam Taylor',
+          avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&q=80',
+          department: 'Economics',
+          year: '3rd Year',
+        },
+        trainNumber: '12002',
+        trainName: 'Bhopal Shatabdi',
+        fromStation: 'NDLS',
+        toStation: 'BPL',
+        date: '2026-12-05',
+        departureTime: '06:00',
+      },
+      isSameCoach: false,
+      distanceHours: 0,
+    },
+  ],
+};
+
+export const INITIAL_RIDES: Ride[] = [
+  {
+    id: 'ride_701',
+    creatorId: 'usr_alex_001',
+    creator: {
+      id: 'usr_alex_001',
+      name: 'Alex Chen',
+      email: 'student@campus.edu',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      department: 'Computer Science',
+      year: '3rd Year',
+    },
+    origin: 'North Campus Main Gate',
+    destination: 'Airport Terminal 3',
+    departureTime: new Date(Date.now() + 86400000 * 2).toISOString(),
+    totalSeats: 4,
+    availableSeats: 2,
+    estimatedFare: 80.0,
+    status: 'OPEN',
+    notes: 'Heading for flight back home! 1 medium bag per passenger. Splitting Uber XL fare.',
+    passengers: [
+      {
+        id: 'rm_001',
+        rideId: 'ride_701',
+        userId: 'usr_alex_001',
+        user: {
+          id: 'usr_alex_001',
+          name: 'Alex Chen',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+          department: 'Computer Science',
+          year: '3rd Year',
+        },
+        joinedAt: '2026-11-01T12:00:00.000Z',
+      },
+      {
+        id: 'rm_002',
+        rideId: 'ride_701',
+        userId: 'usr_priya_002',
+        user: {
+          id: 'usr_priya_002',
+          name: 'Priya Sharma',
+          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+          department: 'Physics',
+          year: '2nd Year',
+        },
+        joinedAt: '2026-11-01T15:30:00.000Z',
+      },
+    ],
+    members: [
+      {
+        id: 'rm_001',
+        rideId: 'ride_701',
+        userId: 'usr_alex_001',
+        user: {
+          id: 'usr_alex_001',
+          name: 'Alex Chen',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+          department: 'Computer Science',
+          year: '3rd Year',
+        },
+        joinedAt: '2026-11-01T12:00:00.000Z',
+      },
+      {
+        id: 'rm_002',
+        rideId: 'ride_701',
+        userId: 'usr_priya_002',
+        user: {
+          id: 'usr_priya_002',
+          name: 'Priya Sharma',
+          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+          department: 'Physics',
+          year: '2nd Year',
+        },
+        joinedAt: '2026-11-01T15:30:00.000Z',
+      },
+    ],
+    createdAt: '2026-11-01T12:00:00.000Z',
+    updatedAt: '2026-11-01T15:30:00.000Z',
+  },
+  {
+    id: 'ride_702',
+    creatorId: 'usr_marcus_003',
+    creator: {
+      id: 'usr_marcus_003',
+      name: 'Marcus Williams',
+      email: 'marcus.w@campus.edu',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+      department: 'Civil Engineering',
+      year: '4th Year',
+    },
+    origin: 'Hostels (Block C)',
+    destination: 'Central Railway Station',
+    departureTime: new Date(Date.now() + 86400000).toISOString(),
+    totalSeats: 3,
+    availableSeats: 0,
+    estimatedFare: 45.0,
+    status: 'FULL',
+    notes: 'Catching evening trains. Leaving sharp on time.',
+    passengers: [
+      {
+        id: 'rm_003',
+        rideId: 'ride_702',
+        userId: 'usr_marcus_003',
+        user: { id: 'usr_marcus_003', name: 'Marcus Williams' },
+        joinedAt: '2026-11-01T10:00:00.000Z',
+      },
+      {
+        id: 'rm_004',
+        rideId: 'ride_702',
+        userId: 'usr_sam_006',
+        user: { id: 'usr_sam_006', name: 'Sam Taylor' },
+        joinedAt: '2026-11-01T11:00:00.000Z',
+      },
+      {
+        id: 'rm_005',
+        rideId: 'ride_702',
+        userId: 'usr_jordan_005',
+        user: { id: 'usr_jordan_005', name: 'Jordan Lee' },
+        joinedAt: '2026-11-01T12:00:00.000Z',
+      },
+    ],
+    members: [
+      {
+        id: 'rm_003',
+        rideId: 'ride_702',
+        userId: 'usr_marcus_003',
+        user: { id: 'usr_marcus_003', name: 'Marcus Williams' },
+        joinedAt: '2026-11-01T10:00:00.000Z',
+      },
+      {
+        id: 'rm_004',
+        rideId: 'ride_702',
+        userId: 'usr_sam_006',
+        user: { id: 'usr_sam_006', name: 'Sam Taylor' },
+        joinedAt: '2026-11-01T11:00:00.000Z',
+      },
+      {
+        id: 'rm_005',
+        rideId: 'ride_702',
+        userId: 'usr_jordan_005',
+        user: { id: 'usr_jordan_005', name: 'Jordan Lee' },
+        joinedAt: '2026-11-01T12:00:00.000Z',
+      },
+    ],
+    createdAt: '2026-11-01T10:00:00.000Z',
+    updatedAt: '2026-11-01T12:00:00.000Z',
+  },
+  {
+    id: 'ride_703',
+    creatorId: 'usr_jordan_005',
+    creator: {
+      id: 'usr_jordan_005',
+      name: 'Jordan Lee',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+      department: 'Mathematics',
+      year: '2nd Year',
+    },
+    origin: 'Library Plaza',
+    destination: 'Downtown Shopping Mall',
+    departureTime: new Date(Date.now() - 86400000).toISOString(),
+    totalSeats: 4,
+    availableSeats: 2,
+    estimatedFare: 32.0,
+    status: 'COMPLETED',
+    notes: 'Grocery run completed yesterday.',
+    passengers: [
+      {
+        id: 'rm_006',
+        rideId: 'ride_703',
+        userId: 'usr_jordan_005',
+        user: { id: 'usr_jordan_005', name: 'Jordan Lee' },
+        joinedAt: '2026-10-31T14:00:00.000Z',
+      },
+      {
+        id: 'rm_007',
+        rideId: 'ride_703',
+        userId: 'usr_sam_006',
+        user: { id: 'usr_sam_006', name: 'Sam Taylor' },
+        joinedAt: '2026-10-31T14:30:00.000Z',
+      },
+    ],
+    members: [
+      {
+        id: 'rm_006',
+        rideId: 'ride_703',
+        userId: 'usr_jordan_005',
+        user: { id: 'usr_jordan_005', name: 'Jordan Lee' },
+        joinedAt: '2026-10-31T14:00:00.000Z',
+      },
+      {
+        id: 'rm_007',
+        rideId: 'ride_703',
+        userId: 'usr_sam_006',
+        user: { id: 'usr_sam_006', name: 'Sam Taylor' },
+        joinedAt: '2026-10-31T14:30:00.000Z',
+      },
+    ],
+    createdAt: '2026-10-31T14:00:00.000Z',
+    updatedAt: '2026-11-01T20:00:00.000Z',
+  },
+];
+
+export const INITIAL_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv_001',
+    isGroup: false,
+    participantIds: ['usr_alex_001', 'usr_priya_002'],
+    participants: [
+      {
+        id: 'usr_priya_002',
+        name: 'Priya Sharma',
+        avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+        department: 'Physics',
+        year: '2nd Year',
+      },
+    ],
+    lastMessage: {
+      id: 'msg_005',
+      conversationId: 'conv_001',
+      senderId: 'usr_alex_001',
+      content: 'Great! See you at the North Gate on Friday morning.',
+      createdAt: '2026-11-02T16:15:00.000Z',
+    },
+    createdAt: '2026-11-02T15:00:00.000Z',
+    updatedAt: '2026-11-02T16:15:00.000Z',
+  },
+  {
+    id: 'conv_002',
+    isGroup: true,
+    title: 'Ride: North Campus → Airport T3',
+    rideId: 'ride_701',
+    participantIds: ['usr_alex_001', 'usr_priya_002'],
+    participants: [
+      {
+        id: 'usr_priya_002',
+        name: 'Priya Sharma',
+        avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+        department: 'Physics',
+        year: '2nd Year',
+      },
+    ],
+    lastMessage: {
+      id: 'msg_006',
+      conversationId: 'conv_002',
+      senderId: 'usr_alex_001',
+      content: 'Welcome to the ride group! Estimated fare is $80 total.',
+      createdAt: '2026-11-01T15:35:00.000Z',
+    },
+    createdAt: '2026-11-01T12:00:00.000Z',
+    updatedAt: '2026-11-01T15:35:00.000Z',
+  },
+  {
+    id: 'conv_003',
+    isGroup: false,
+    participantIds: ['usr_alex_001', 'usr_rohan_004'],
+    participants: [
+      {
+        id: 'usr_rohan_004',
+        name: 'Rohan Verma',
+        avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
+        department: 'Computer Science',
+        year: '3rd Year',
+      },
+    ],
+    lastMessage: {
+      id: 'msg_007',
+      conversationId: 'conv_003',
+      senderId: 'usr_rohan_004',
+      content: 'Hey Alex! Saw your trip on the Rajdhani radar. Let’s connect on the train!',
+      createdAt: '2026-11-02T14:20:00.000Z',
+    },
+    createdAt: '2026-11-02T14:00:00.000Z',
+    updatedAt: '2026-11-02T14:20:00.000Z',
+  },
+];
+
+export const INITIAL_MESSAGES: Record<string, Message[]> = {
+  conv_001: [
+    {
+      id: 'msg_001',
+      conversationId: 'conv_001',
+      senderId: 'usr_alex_001',
+      content: 'Hey Priya, saw you joined the airport cab for Friday!',
+      createdAt: '2026-11-02T15:00:00.000Z',
+    },
+    {
+      id: 'msg_002',
+      conversationId: 'conv_001',
+      senderId: 'usr_priya_002',
+      content: 'Yes! Heading to the hackathon in Delhi. What time are we meeting?',
+      createdAt: '2026-11-02T15:05:00.000Z',
+    },
+    {
+      id: 'msg_003',
+      conversationId: 'conv_001',
+      senderId: 'usr_alex_001',
+      content: 'Leaving around 5:45 AM from North Gate to beat morning traffic.',
+      createdAt: '2026-11-02T15:08:00.000Z',
+    },
+    {
+      id: 'msg_004',
+      conversationId: 'conv_001',
+      senderId: 'usr_priya_002',
+      content: 'Sounds perfect, I just have a backpack and a carry-on trolley.',
+      createdAt: '2026-11-02T15:10:00.000Z',
+    },
+    {
+      id: 'msg_005',
+      conversationId: 'conv_001',
+      senderId: 'usr_alex_001',
+      content: 'Great! See you at the North Gate on Friday morning.',
+      createdAt: '2026-11-02T16:15:00.000Z',
+    },
+  ],
+  conv_002: [
+    {
+      id: 'msg_006',
+      conversationId: 'conv_002',
+      senderId: 'usr_alex_001',
+      content: 'Welcome to the ride group! Estimated fare is $80 total.',
+      createdAt: '2026-11-01T15:35:00.000Z',
+    },
+  ],
+  conv_003: [
+    {
+      id: 'msg_007',
+      conversationId: 'conv_003',
+      senderId: 'usr_rohan_004',
+      content: 'Hey Alex! Saw your trip on the Rajdhani radar. Let’s connect on the train!',
+      createdAt: '2026-11-02T14:20:00.000Z',
+    },
+  ],
+};
+
+export const INITIAL_NOTIFICATIONS: Notification[] = [
+  {
+    id: 'notif_001',
+    userId: 'usr_alex_001',
+    title: 'New Train Buddy Radar Alert!',
+    message: 'Rohan Verma is also traveling on Train #12951 (NDLS → BCT) on 2026-11-20.',
+    type: 'MATCH',
+    link: '/train-buddy',
+    isRead: false,
+    createdAt: '2026-11-02T14:20:00.000Z',
+  },
+  {
+    id: 'notif_002',
+    userId: 'usr_alex_001',
+    title: 'New Passenger Joined!',
+    message: 'Priya Sharma joined your ride to Airport Terminal 3.',
+    type: 'RIDE',
+    link: '/rides',
+    isRead: false,
+    createdAt: '2026-11-01T15:30:00.000Z',
+  },
+  {
+    id: 'notif_003',
+    userId: 'usr_alex_001',
+    title: 'New message from Priya Sharma',
+    message: 'Great! See you at the North Gate on Friday morning.',
+    type: 'CHAT',
+    link: '/chat?id=conv_001',
+    isRead: true,
+    createdAt: '2026-11-02T16:15:00.000Z',
+  },
+  {
+    id: 'notif_004',
+    userId: 'usr_alex_001',
+    title: 'Possible Item Match!',
+    message: "A found item matching 'AirPods Pro' was recently registered.",
+    type: 'MATCH',
+    link: '/lost-found',
+    isRead: true,
+    createdAt: '2026-11-01T15:15:00.000Z',
+  },
+];
+
+const STORAGE_KEY = 'campusloop_mock_store_v2';
 
 export function getMockStore(): MockStore {
-  if (typeof window === 'undefined') {
-    return {
-      user: DEFAULT_USER,
-      token: 'mock_jwt_token_alex_chen_2026',
-      lostItems: INITIAL_LOST_ITEMS,
-      foundItems: INITIAL_FOUND_ITEMS,
-      listings: INITIAL_LISTINGS,
-      wishlistIds: ['list_301', 'list_304'],
-    };
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed;
-    }
-  } catch (err) {
-    console.warn('Failed to parse mock store from localStorage, resetting:', err);
-  }
-
-  const initial: MockStore = {
+  const defaultInitial: MockStore = {
     user: DEFAULT_USER,
     token: 'mock_jwt_token_alex_chen_2026',
     lostItems: INITIAL_LOST_ITEMS,
     foundItems: INITIAL_FOUND_ITEMS,
     listings: INITIAL_LISTINGS,
     wishlistIds: ['list_301', 'list_304'],
+    trainTrips: INITIAL_TRAIN_TRIPS,
+    buddiesMap: INITIAL_BUDDIES_MAP,
+    rides: INITIAL_RIDES,
+    conversations: INITIAL_CONVERSATIONS,
+    messages: INITIAL_MESSAGES,
+    notifications: INITIAL_NOTIFICATIONS,
   };
 
+  if (typeof window === 'undefined') {
+    return defaultInitial;
+  }
+
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Ensure missing Phase 2 collections fall back gracefully
+      return {
+        ...defaultInitial,
+        ...parsed,
+        trainTrips: parsed.trainTrips || defaultInitial.trainTrips,
+        buddiesMap: parsed.buddiesMap || defaultInitial.buddiesMap,
+        rides: parsed.rides || defaultInitial.rides,
+        conversations: parsed.conversations || defaultInitial.conversations,
+        messages: parsed.messages || defaultInitial.messages,
+        notifications: parsed.notifications || defaultInitial.notifications,
+      };
+    }
+  } catch (err) {
+    console.warn('Failed to parse mock store from localStorage, resetting:', err);
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultInitial));
   } catch (e) {
     // ignore
   }
 
-  return initial;
+  return defaultInitial;
 }
 
 export function saveMockStore(store: MockStore): void {
@@ -411,3 +937,4 @@ export function saveMockStore(store: MockStore): void {
     console.error('Failed to save mock store to localStorage:', err);
   }
 }
+

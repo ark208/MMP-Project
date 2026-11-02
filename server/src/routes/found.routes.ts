@@ -14,11 +14,18 @@ export const createFoundSchema = z.object({
   description: z.string().min(5, 'Description must be at least 5 characters'),
   category: z.string().min(1, 'Category is required'),
   location: z.string().min(1, 'Location is required'),
-  dateFound: z.string().datetime({ message: 'dateFound must be a valid ISO datetime string' }),
-  imageUrl: z.string().url('Invalid image URL').optional().nullable(),
-  holdingLocation: z.enum(['with finder', 'security office', 'department'], {
-    errorMap: () => ({ message: 'holdingLocation must be: with finder, security office, or department' }),
-  }),
+  dateFound: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'dateFound must be a valid date string' }),
+  imageUrl: z
+    .string()
+    .url('Invalid image URL')
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
+  holdingLocation: z
+    .string()
+    .min(1, 'Holding location is required')
+    .default('with finder'),
   secretQuestion: z.string().min(3, 'Secret question must be at least 3 characters'),
   secretAnswer: z.string().min(1, 'Secret answer is required for ownership verification'),
 });
@@ -26,12 +33,22 @@ export const createFoundSchema = z.object({
 export const claimFoundSchema = z.object({
   answer: z.string().min(1, 'Verification answer is required'),
   note: z.string().optional(),
+  proofImageUrl: z
+    .string()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
 });
 
 export const updateFoundStatusSchema = z.object({
-  status: z.enum(['open', 'reunited'], {
-    errorMap: () => ({ message: 'Status must be one of: open, reunited' }),
-  }),
+  status: z
+    .string()
+    .transform((val) => {
+      const v = val.toLowerCase().trim();
+      return v === 'resolved' ? 'reunited' : v;
+    })
+    .pipe(z.enum(['open', 'reunited'])),
 });
 
 /**
@@ -114,14 +131,13 @@ router.get(
         isExpired: false,
       };
 
-      if (category) {
+      if (category && category.toUpperCase() !== 'ALL') {
         where.category = { equals: category, mode: 'insensitive' };
       }
 
-      if (status) {
-        where.status = { equals: status, mode: 'insensitive' };
-      } else {
-        where.status = 'open';
+      if (status && status.toUpperCase() !== 'ALL') {
+        const normStatus = status.toLowerCase() === 'resolved' ? 'reunited' : status.toLowerCase();
+        where.status = { equals: normStatus, mode: 'insensitive' };
       }
 
       if (q) {

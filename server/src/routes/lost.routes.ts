@@ -13,14 +13,24 @@ export const createLostSchema = z.object({
   description: z.string().min(5, 'Description must be at least 5 characters'),
   category: z.string().min(1, 'Category is required'),
   location: z.string().min(1, 'Location is required'),
-  dateLost: z.string().datetime({ message: 'dateLost must be a valid ISO datetime string' }),
-  imageUrl: z.string().url('Invalid image URL').optional().nullable(),
+  dateLost: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'dateLost must be a valid date string' }),
+  imageUrl: z
+    .string()
+    .url('Invalid image URL')
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? null : val)),
 });
 
 export const updateLostStatusSchema = z.object({
-  status: z.enum(['open', 'reunited', 'closed'], {
-    errorMap: () => ({ message: 'Status must be one of: open, reunited, closed' }),
-  }),
+  status: z
+    .string()
+    .transform((val) => {
+      const v = val.toLowerCase().trim();
+      return v === 'resolved' ? 'reunited' : v;
+    })
+    .pipe(z.enum(['open', 'reunited', 'closed'])),
 });
 
 /**
@@ -83,14 +93,13 @@ router.get(
         isExpired: false,
       };
 
-      if (category) {
+      if (category && category.toUpperCase() !== 'ALL') {
         where.category = { equals: category, mode: 'insensitive' };
       }
 
-      if (status) {
-        where.status = { equals: status, mode: 'insensitive' };
-      } else {
-        where.status = 'open';
+      if (status && status.toUpperCase() !== 'ALL') {
+        const normStatus = status.toLowerCase() === 'resolved' ? 'reunited' : status.toLowerCase();
+        where.status = { equals: normStatus, mode: 'insensitive' };
       }
 
       if (q) {

@@ -39,6 +39,12 @@ const registerFoundSchema = z.object({
     .string()
     .min(5, 'Secret question is required so the true owner can verify themselves')
     .max(200, 'Secret question too long'),
+  secretAnswer: z
+    .string()
+    .min(1, 'Secret answer is required for ownership verification'),
+  holdingLocation: z
+    .enum(['with finder', 'security office', 'department'])
+    .default('with finder'),
   keptAt: z
     .string()
     .min(3, 'Please specify where the item is securely kept or surrendered'),
@@ -79,6 +85,8 @@ export default function RegisterFoundPage() {
       dateFound: new Date().toISOString().split('T')[0],
       description: '',
       secretQuestion: '',
+      secretAnswer: '',
+      holdingLocation: 'security office',
       keptAt: 'Campus Security Central Office - Room 102',
       imageUrl: '',
     },
@@ -118,6 +126,8 @@ export default function RegisterFoundPage() {
           dateFound: new Date(data.dateFound).toISOString(),
           imageUrl: data.imageUrl,
           secretQuestion: data.secretQuestion,
+          secretAnswer: data.secretAnswer,
+          holdingLocation: data.holdingLocation,
           keptAt: data.keptAt,
         });
 

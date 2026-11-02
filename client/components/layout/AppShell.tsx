@@ -19,9 +19,14 @@ import {
   LogOut,
   ChevronRight,
   X,
+  Train,
+  Car,
+  MessageSquare,
+  Bell,
 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
+import { NotificationBell } from './NotificationBell';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,6 +38,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { label: 'Home', href: '/', icon: Home },
     { label: 'Lost & Found', href: '/lost-found', icon: Search },
     { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
+    { label: 'Campus Rides', href: '/rides', icon: Car },
+    { label: 'Train Buddy', href: '/train-buddy', icon: Train },
+    { label: 'In-App Chat', href: '/chat', icon: MessageSquare },
+    { label: 'Notifications', href: '/notifications', icon: Bell },
     { label: 'Wishlist', href: '/marketplace/wishlist', icon: Heart },
     { label: 'Profile', href: '/profile', icon: User },
   ];
@@ -48,8 +57,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* DESKTOP SIDEBAR */}
       {/* ============================================================== */}
       <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 h-screen p-5 shrink-0 z-30 justify-between">
-        <div className="space-y-6">
-          {/* Logo & Brand */}
+        <div className="space-y-5 overflow-y-auto pr-1">
+          {/* Logo, Brand & Controls */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
@@ -65,13 +74,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </Link>
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              aria-label="Toggle color theme"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-neutral-600" />}
-            </button>
+            <div className="flex items-center gap-1">
+              <NotificationBell />
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                aria-label="Toggle color theme"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-neutral-600" />}
+              </button>
+            </div>
           </div>
 
           {/* Quick Action Button */}
@@ -93,6 +105,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 />
                 <div className="absolute left-0 right-0 mt-2 p-2 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 animate-in fade-in zoom-in-95 space-y-1">
                   <Link
+                    href="/rides"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                      <Car className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Offer a Ride</div>
+                      <div className="text-xs text-neutral-500">Cab pool to airport/station</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/train-buddy"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+                      <Train className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Train Journey</div>
+                      <div className="text-xs text-neutral-500">Find classmates on your train</div>
+                    </div>
+                  </Link>
+
+                  <Link
                     href="/lost-found/report-lost"
                     onClick={() => setShowCreateMenu(false)}
                     className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
@@ -111,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     onClick={() => setShowCreateMenu(false)}
                     className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
                   >
-                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
                       <CheckCircle className="w-4 h-4" />
                     </div>
                     <div>
@@ -139,7 +179,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5" aria-label="Desktop Sidebar Navigation">
+          <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -147,7 +187,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     active
                       ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold'
                       : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white'
@@ -212,6 +252,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Notification Bell in Mobile Header */}
+          <NotificationBell />
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -266,13 +309,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <Link
-          href="/lost-found"
+          href="/rides"
           className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/lost-found') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+            isActive('/rides') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
           }`}
         >
-          <Search className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Lost & Found</span>
+          <Car className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Rides</span>
         </Link>
 
         {/* Action Button: Center Post Button */}
@@ -288,25 +331,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
 
         <Link
-          href="/marketplace"
+          href="/train-buddy"
           className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/marketplace') && !isActive('/marketplace/wishlist')
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-neutral-500 dark:text-neutral-400'
+            isActive('/train-buddy') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
           }`}
         >
-          <ShoppingBag className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Market</span>
+          <Train className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Train</span>
         </Link>
 
         <Link
-          href="/profile"
+          href="/chat"
           className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/profile') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+            isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
           }`}
         >
-          <User className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Profile</span>
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Chat</span>
         </Link>
       </nav>
 
@@ -325,6 +366,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="space-y-2">
+              <Link
+                href="/rides"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white">
+                    <Car className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-emerald-950 dark:text-emerald-100 text-sm">Offer a Campus Ride</div>
+                    <div className="text-xs text-emerald-700/80 dark:text-emerald-300">Pool cabs to airport, stations & city</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-emerald-400" />
+              </Link>
+
+              <Link
+                href="/train-buddy"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-600 text-white">
+                    <Train className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-amber-950 dark:text-amber-100 text-sm">Post Train Journey</div>
+                    <div className="text-xs text-amber-700/80 dark:text-amber-300">Find classmates on your train</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-amber-400" />
+              </Link>
+
               <Link
                 href="/lost-found/report-lost"
                 onClick={() => setShowCreateMenu(false)}
@@ -345,18 +420,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 href="/lost-found/register-found"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/50"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white">
+                  <div className="p-2.5 rounded-xl bg-teal-600 text-white">
                     <CheckCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-emerald-950 dark:text-emerald-100 text-sm">Register Found Item</div>
-                    <div className="text-xs text-emerald-700/80 dark:text-emerald-300">Set secret question & safe custody</div>
+                    <div className="font-bold text-teal-950 dark:text-teal-100 text-sm">Register Found Item</div>
+                    <div className="text-xs text-teal-700/80 dark:text-teal-300">Set secret question & safe custody</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-400" />
+                <ChevronRight className="w-4 h-4 text-teal-400" />
               </Link>
 
               <Link
@@ -366,7 +441,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-purple-600 text-white">
-                    <Tag className="w-5 h-5" />
+                    <Tag className="w-4 h-4" />
                   </div>
                   <div>
                     <div className="font-bold text-purple-950 dark:text-purple-100 text-sm">Sell on Marketplace</div>

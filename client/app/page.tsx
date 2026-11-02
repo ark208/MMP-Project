@@ -14,8 +14,11 @@ import {
   Tag,
   ShieldCheck,
   TrendingUp,
+  Car,
+  Train,
+  Users,
 } from 'lucide-react';
-import type { LostItem, Listing } from '@docs/types';
+import type { LostItem, Listing, Ride } from '@docs/types';
 import { ExtendedFoundItem } from '@/lib/mock-data';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -28,15 +31,20 @@ export default function Home() {
   const [lostItems, setLostItems] = useState<LostItem[]>([]);
   const [foundItems, setFoundItems] = useState<ExtendedFoundItem[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
 
   useEffect(() => {
     async function loadFeed() {
       try {
         setLoading(true);
-        const data = await api.feed.getSummary();
-        setLostItems(data.lost);
-        setFoundItems(data.found);
-        setListings(data.marketplace);
+        const [feedData, ridesData] = await Promise.all([
+          api.feed.getSummary(),
+          api.rides.list().catch(() => []),
+        ]);
+        setLostItems(feedData.lost);
+        setFoundItems(feedData.found);
+        setListings(feedData.marketplace);
+        setRides(ridesData.slice(0, 3));
       } catch (err) {
         console.error('Failed to load home feed:', err);
       } finally {
@@ -60,30 +68,37 @@ export default function Home() {
             Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
           </h1>
           <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed">
-            Your verified hub for recovering lost belongings, reuniting found items, and discovering student-to-student marketplace gear.
+            Your verified hub for Lost & Found, student-to-student Marketplace, Campus Cab Splitting, and Train Buddy Radar.
           </p>
 
           <div className="pt-2 flex flex-wrap gap-2.5">
             <Link
-              href="/lost-found/report-lost"
+              href="/rides"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-102"
             >
-              <HelpCircle className="w-4 h-4 text-rose-500" />
-              <span>Report Lost Item</span>
+              <Car className="w-4 h-4 text-emerald-600" />
+              <span>Campus Rides</span>
             </Link>
             <Link
-              href="/lost-found/register-found"
+              href="/train-buddy"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 text-white border border-white/20 text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-102"
             >
-              <CheckCircle className="w-4 h-4 text-emerald-300" />
-              <span>Register Found Item</span>
+              <Train className="w-4 h-4 text-amber-300" />
+              <span>Train Buddy Radar</span>
             </Link>
             <Link
-              href="/marketplace/create"
+              href="/lost-found"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 text-white border border-white/20 text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-102"
+            >
+              <Search className="w-4 h-4 text-emerald-300" />
+              <span>Lost & Found</span>
+            </Link>
+            <Link
+              href="/marketplace"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 text-white border border-white/20 text-xs sm:text-sm font-bold shadow-md transition-all hover:scale-102"
             >
               <Tag className="w-4 h-4 text-purple-300" />
-              <span>Sell Gear</span>
+              <span>Marketplace</span>
             </Link>
           </div>
         </div>
@@ -95,30 +110,43 @@ export default function Home() {
       </section>
 
       {/* Campus Quick Stats */}
-      <section className="grid grid-cols-3 gap-3 sm:gap-4">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Link
-          href="/lost-found?tab=lost"
+          href="/rides"
           className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-center sm:text-left group"
         >
-          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Open Lost Reports</div>
-          <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
-            {loading ? '...' : lostItems.length}
+          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Campus Rides</div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+            {loading ? '...' : rides.length}
           </div>
           <div className="text-[11px] text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:block mt-0.5">
-            View active reports &rarr;
+            Join or share &rarr;
           </div>
         </Link>
 
         <Link
-          href="/lost-found?tab=found"
+          href="/train-buddy"
           className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-center sm:text-left group"
         >
-          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Safe Found Custody</div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-            {loading ? '...' : foundItems.length}
+          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Train Radar</div>
+          <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+            Active
           </div>
           <div className="text-[11px] text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:block mt-0.5">
-            Claim your items &rarr;
+            Match buddies &rarr;
+          </div>
+        </Link>
+
+        <Link
+          href="/lost-found"
+          className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all text-center sm:text-left group"
+        >
+          <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Lost & Found</div>
+          <div className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
+            {loading ? '...' : lostItems.length + foundItems.length}
+          </div>
+          <div className="text-[11px] text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:block mt-0.5">
+            View active items &rarr;
           </div>
         </Link>
 

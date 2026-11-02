@@ -1,4 +1,7 @@
 import { prisma } from '../config/prisma';
+import { env } from '../config/env';
+
+env.ALLOWED_EMAIL_DOMAIN = 'campus.edu';
 
 // Memory tables
 export const memoryDb = {

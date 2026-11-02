@@ -8,25 +8,42 @@ import { AppError, sendSuccess } from '../utils/response';
 const router = Router();
 
 // Validation Schemas
+const normalizeCondition = (val: unknown): string => {
+  if (typeof val !== 'string') return 'used';
+  const v = val.toLowerCase().trim().replace(/_/g, ' ');
+  if (v === 'new') return 'new';
+  if (v === 'like new') return 'like new';
+  return 'used';
+};
+
 export const createListingSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
   description: z.string().min(5, 'Description must be at least 5 characters'),
-  price: z.number().positive('Price must be greater than zero'),
+  price: z.number().min(0, 'Price must be 0 or greater'),
   category: z.string().min(1, 'Category is required'),
-  condition: z.enum(['new', 'like new', 'used'], {
-    errorMap: () => ({ message: 'Condition must be: new, like new, or used' }),
-  }),
+  condition: z
+    .string()
+    .transform(normalizeCondition)
+    .pipe(z.enum(['new', 'like new', 'used'])),
   imageUrls: z.array(z.string().url('Invalid image URL')).default([]),
 });
 
 export const updateListingSchema = z.object({
   title: z.string().min(2).optional(),
   description: z.string().min(5).optional(),
-  price: z.number().positive().optional(),
+  price: z.number().min(0).optional(),
   category: z.string().min(1).optional(),
-  condition: z.enum(['new', 'like new', 'used']).optional(),
+  condition: z
+    .string()
+    .transform(normalizeCondition)
+    .pipe(z.enum(['new', 'like new', 'used']))
+    .optional(),
   imageUrls: z.array(z.string().url()).optional(),
-  status: z.enum(['available', 'reserved', 'sold']).optional(),
+  status: z
+    .string()
+    .transform((val) => val.toLowerCase())
+    .pipe(z.enum(['available', 'reserved', 'sold']))
+    .optional(),
 });
 
 /**
@@ -99,12 +116,13 @@ router.get(
         status: { not: 'sold' },
       };
 
-      if (category) {
+      if (category && category.toUpperCase() !== 'ALL') {
         where.category = { equals: category, mode: 'insensitive' };
       }
 
-      if (condition) {
-        where.condition = { equals: condition, mode: 'insensitive' };
+      if (condition && condition.toUpperCase() !== 'ALL') {
+        const normCondition = condition.toLowerCase().trim().replace(/_/g, ' ');
+        where.condition = { equals: normCondition, mode: 'insensitive' };
       }
 
       if (minPrice || maxPrice) {
@@ -293,21 +311,34 @@ router.post(
         throw new AppError(404, 'NOT_FOUND', 'Listing not found');
       }
 
-      await prisma.wishlist.upsert({
+      const existing = await prisma.wishlist.findUnique({
         where: {
           userId_listingId: {
             userId: user.id,
             listingId: id,
           },
         },
-        create: {
-          userId: user.id,
-          listingId: id,
-        },
-        update: {},
       });
 
-      sendSuccess(res, { listingId: id, isWishlisted: true });
+      if (existing) {
+        await prisma.wishlist.delete({
+          where: {
+            userId_listingId: {
+              userId: user.id,
+              listingId: id,
+            },
+          },
+        });
+        sendSuccess(res, { listingId: id, isWishlisted: false });
+      } else {
+        await prisma.wishlist.create({
+          data: {
+            userId: user.id,
+            listingId: id,
+          },
+        });
+        sendSuccess(res, { listingId: id, isWishlisted: true });
+      }
     } catch (err) {
       next(err);
     }

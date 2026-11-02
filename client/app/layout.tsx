@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/lib/theme-context';
 import { ToastProvider } from '@/lib/toast-context';
 import { AuthProvider } from '@/lib/auth-context';
+import { NotificationsProvider } from '@/lib/notifications-context';
 import { AppShell } from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
-              <AppShell>{children}</AppShell>
+              <NotificationsProvider>
+                <AppShell>{children}</AppShell>
+              </NotificationsProvider>
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>
