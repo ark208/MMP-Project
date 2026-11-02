@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Search,
@@ -30,10 +30,16 @@ import { NotificationBell } from './NotificationBell';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Navigation Items (Phase 1 + Phase 2)
   const navItems = [
     { label: 'Home', href: '/', icon: Home },
     { label: 'Lost & Found', href: '/lost-found', icon: Search },
@@ -51,6 +57,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href);
   };
 
+  // Fetch notifications
+  useEffect(() => {
+    loadNotifications();
+
+    if (!isMockMode) {
+      const socket = getSocket();
+      if (socket) {
+        socket.on('notification:new', (newNotif: Notification) => {
+          setNotifications((prev) => [newNotif, ...prev]);
+        });
+      }
+    }
+
+    // Polling fallback
+    const interval = setInterval(loadNotifications, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadNotifications() {
+    try {
+      const data = await notificationsApi.list();
+      setNotifications(data);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async function handleMarkAllAsRead() {
+    try {
+      await notificationsApi.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 flex flex-col md:flex-row text-neutral-900 dark:text-neutral-100 transition-colors duration-200">
       {/* ============================================================== */}
@@ -61,14 +105,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Logo, Brand & Controls */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
                 <span className="font-extrabold text-xl tracking-tight">
                   Campus<span className="text-emerald-600 dark:text-emerald-400">Loop</span>
                 </span>
-                <span className="block text-[10px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                <span className="block text-[9px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
                   Campus Network
                 </span>
               </div>
@@ -86,11 +130,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Quick Action Button */}
+          {/* Quick Action Button: + Post or Register */}
           <div className="relative">
             <button
               onClick={() => setShowCreateMenu(!showCreateMenu)}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all hover:shadow-md"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all hover:shadow-md"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Post or Register</span>
@@ -173,12 +217,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <div className="text-xs text-neutral-500">List books, gear & dorm items</div>
                     </div>
                   </Link>
+
+                  <Link
+                    href="/trips"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
+                      <Train className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Post Train Journey</div>
+                      <div className="text-xs text-neutral-500">Activate Train Buddy radar</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/rides"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                      <Car className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Offer Ride Share</div>
+                      <div className="text-xs text-neutral-500">Split cab fares to airport/station</div>
+                    </div>
+                  </Link>
                 </div>
               </>
             )}
           </div>
 
           {/* Navigation Links */}
+          <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
           <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -193,7 +266,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -209,7 +282,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <img
                   src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
                   alt={user.name}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
                 />
                 <div className="truncate">
                   <div className="text-xs font-bold truncate text-neutral-900 dark:text-white">
@@ -260,7 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {isAuthenticated && user ? (
@@ -268,13 +341,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <img
                 src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
                 alt={user.name}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30"
+                className="w-7 h-7 rounded-full object-cover ring-2 ring-emerald-500/30"
               />
             </Link>
           ) : (
             <Link
               href="/auth/login"
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white"
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-600 text-white"
             >
               Sign In
             </Link>
@@ -295,17 +368,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* MOBILE BOTTOM TAB BAR */}
       {/* ============================================================== */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-3 py-2 flex items-center justify-around"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-2 py-2 flex items-center justify-around"
         aria-label="Mobile Navigation Bar"
       >
         <Link
           href="/"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <Home className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Home</span>
+          <Home className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Home</span>
+        </Link>
+
+        <Link
+          href="/trips"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/trips') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          }`}
+        >
+          <Train className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Trains</span>
         </Link>
 
         <Link
@@ -318,17 +401,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-[10px] font-semibold">Rides</span>
         </Link>
 
-        {/* Action Button: Center Post Button */}
+        {/* Center Post Button */}
         <button
           onClick={() => setShowCreateMenu(true)}
-          className="flex flex-col items-center justify-center -mt-5"
+          className="flex flex-col items-center justify-center -mt-4"
           aria-label="Create new post"
         >
-          <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 transition-transform active:scale-95">
-            <PlusCircle className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
+            <PlusCircle className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Post</span>
+          <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">Post</span>
         </button>
+
+        <Link
+          href="/chat"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          }`}
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Chat</span>
+        </Link>
 
         <Link
           href="/train-buddy"
@@ -354,7 +447,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Create Post Modal */}
       {showCreateMenu && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full bg-white dark:bg-neutral-900 rounded-t-3xl p-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4 animate-in slide-in-from-bottom-5">
+          <div className="w-full bg-white dark:bg-neutral-900 rounded-t-3xl p-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4 animate-in slide-in-from-bottom-5 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800">
               <h3 className="text-base font-bold text-neutral-900 dark:text-white">Create Campus Post</h3>
               <button

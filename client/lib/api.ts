@@ -18,16 +18,17 @@ import type {
   Conversation,
   Message,
   Notification,
-} from '@docs/types';
+} from "@docs/types";
 import {
   getMockStore,
   saveMockStore,
   DEFAULT_USER,
   ExtendedFoundItem,
-} from './mock-data';
+} from "./mock-data";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
 // Small async delay for realistic mock latency
 const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,17 +38,18 @@ const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers = new Headers(options.headers || {});
-  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
+  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
   }
 
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -59,7 +61,10 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const errorResponse = json as ApiErrorResponse;
-    throw new Error(errorResponse.error?.message || `Request failed with status ${response.status}`);
+    throw new Error(
+      errorResponse.error?.message ||
+        `Request failed with status ${response.status}`,
+    );
   }
 
   return (json as ApiResponse<T>).data;
@@ -72,13 +77,21 @@ export const authApi = {
   async requestOtp(email: string): Promise<{ message: string; email: string }> {
     if (USE_MOCKS) {
       await delay();
-      if (!email.toLowerCase().includes('.edu') && !email.toLowerCase().includes('campus')) {
-        throw new Error('Please enter a valid university email address (.edu).');
+      if (
+        !email.toLowerCase().includes(".edu") &&
+        !email.toLowerCase().includes("campus")
+      ) {
+        throw new Error(
+          "Please enter a valid university email address (.edu).",
+        );
       }
-      return { message: 'OTP sent successfully to your university email.', email };
+      return {
+        message: "OTP sent successfully to your university email.",
+        email,
+      };
     }
-    return apiFetch<{ message: string; email: string }>('/auth/request-otp', {
-      method: 'POST',
+    return apiFetch<{ message: string; email: string }>("/auth/request-otp", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
   },
@@ -87,33 +100,36 @@ export const authApi = {
     if (USE_MOCKS) {
       await delay(200);
       if (otp.trim().length !== 6) {
-        throw new Error('Invalid OTP. Please enter a 6-digit code.');
+        throw new Error("Invalid OTP. Please enter a 6-digit code.");
       }
       const store = getMockStore();
       const user: User = {
         ...store.user,
         email,
-        name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        name: email
+          .split("@")[0]
+          .replace(/[._]/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase()),
       };
       const token = `mock_jwt_token_${Date.now()}`;
       store.user = user;
       store.token = token;
       saveMockStore(store);
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', token);
-        localStorage.setItem('campusloop_user', JSON.stringify(user));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        localStorage.setItem("campusloop_user", JSON.stringify(user));
       }
 
       return { token, user };
     }
-    const result = await apiFetch<AuthTokens>('/auth/verify-otp', {
-      method: 'POST',
+    const result = await apiFetch<AuthTokens>("/auth/verify-otp", {
+      method: "POST",
       body: JSON.stringify({ email, otp }),
     });
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', result.token);
-      localStorage.setItem('campusloop_user', JSON.stringify(result.user));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("campusloop_user", JSON.stringify(result.user));
     }
     return result;
   },
@@ -124,7 +140,7 @@ export const authApi = {
       const store = getMockStore();
       return store.user;
     }
-    return apiFetch<User>('/me');
+    return apiFetch<User>("/me");
   },
 
   async updateProfile(updates: Partial<User>): Promise<User> {
@@ -137,33 +153,33 @@ export const authApi = {
         updatedAt: new Date().toISOString(),
       };
       saveMockStore(store);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('campusloop_user', JSON.stringify(store.user));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("campusloop_user", JSON.stringify(store.user));
       }
       return store.user;
     }
-    return apiFetch<User>('/me', {
-      method: 'PATCH',
+    return apiFetch<User>("/me", {
+      method: "PATCH",
       body: JSON.stringify(updates),
     });
   },
 
   logout(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('campusloop_user');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("campusloop_user");
     }
   },
 
   getStoredToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
   },
 
   getStoredUser(): User | null {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     try {
-      const data = localStorage.getItem('campusloop_user');
+      const data = localStorage.getItem("campusloop_user");
       return data ? JSON.parse(data) : null;
     } catch {
       return null;
@@ -175,18 +191,23 @@ export const authApi = {
 // Lost & Found API
 // -------------------------------------------------------------------------
 export const lostApi = {
-  async list(filters?: { status?: string; category?: string; q?: string }): Promise<LostItem[]> {
+  async list(filters?: {
+    status?: string;
+    category?: string;
+    q?: string;
+  }): Promise<LostItem[]> {
     if (USE_MOCKS) {
       await delay();
       const store = getMockStore();
       let items = [...store.lostItems];
 
-      if (filters?.status && filters.status !== 'ALL') {
+      if (filters?.status && filters.status !== "ALL") {
         items = items.filter((item) => item.status === filters.status);
       }
-      if (filters?.category && filters.category !== 'ALL') {
+      if (filters?.category && filters.category !== "ALL") {
         items = items.filter(
-          (item) => item.category.toLowerCase() === filters.category?.toLowerCase()
+          (item) =>
+            item.category.toLowerCase() === filters.category?.toLowerCase(),
         );
       }
       if (filters?.q) {
@@ -195,17 +216,22 @@ export const lostApi = {
           (item) =>
             item.title.toLowerCase().includes(query) ||
             item.description.toLowerCase().includes(query) ||
-            item.location.toLowerCase().includes(query)
+            item.location.toLowerCase().includes(query),
         );
       }
-      return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return items.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     }
 
     const params = new URLSearchParams();
-    if (filters?.status && filters.status.toUpperCase() !== 'ALL') params.set('status', filters.status.toLowerCase());
-    if (filters?.category && filters.category.toUpperCase() !== 'ALL') params.set('category', filters.category);
-    if (filters?.q) params.set('q', filters.q);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    if (filters?.status && filters.status.toUpperCase() !== "ALL")
+      params.set("status", filters.status.toLowerCase());
+    if (filters?.category && filters.category.toUpperCase() !== "ALL")
+      params.set("category", filters.category);
+    if (filters?.q) params.set("q", filters.q);
+    const query = params.toString() ? `?${params.toString()}` : "";
     return apiFetch<LostItem[]>(`/lost${query}`);
   },
 
@@ -214,7 +240,7 @@ export const lostApi = {
       await delay();
       const store = getMockStore();
       const item = store.lostItems.find((i) => i.id === id);
-      if (!item) throw new Error('Lost item not found');
+      if (!item) throw new Error("Lost item not found");
       return item;
     }
     return apiFetch<LostItem>(`/lost/${id}`);
@@ -246,7 +272,7 @@ export const lostApi = {
         location: data.location,
         dateLost: data.dateLost,
         imageUrl: data.imageUrl || null,
-        status: 'OPEN',
+        status: "OPEN",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -256,10 +282,11 @@ export const lostApi = {
     }
     const payload = {
       ...data,
-      imageUrl: data.imageUrl && data.imageUrl.trim() !== '' ? data.imageUrl : null,
+      imageUrl:
+        data.imageUrl && data.imageUrl.trim() !== "" ? data.imageUrl : null,
     };
-    return apiFetch<LostItem>('/lost', {
-      method: 'POST',
+    return apiFetch<LostItem>("/lost", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   },
@@ -269,7 +296,7 @@ export const lostApi = {
       await delay();
       const store = getMockStore();
       const index = store.lostItems.findIndex((i) => i.id === id);
-      if (index === -1) throw new Error('Lost item not found');
+      if (index === -1) throw new Error("Lost item not found");
       store.lostItems[index] = {
         ...store.lostItems[index],
         status,
@@ -279,25 +306,30 @@ export const lostApi = {
       return store.lostItems[index];
     }
     return apiFetch<LostItem>(`/lost/${id}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify({ status }),
     });
   },
 };
 
 export const foundApi = {
-  async list(filters?: { status?: string; category?: string; q?: string }): Promise<ExtendedFoundItem[]> {
+  async list(filters?: {
+    status?: string;
+    category?: string;
+    q?: string;
+  }): Promise<ExtendedFoundItem[]> {
     if (USE_MOCKS) {
       await delay();
       const store = getMockStore();
       let items = [...store.foundItems];
 
-      if (filters?.status && filters.status !== 'ALL') {
+      if (filters?.status && filters.status !== "ALL") {
         items = items.filter((item) => item.status === filters.status);
       }
-      if (filters?.category && filters.category !== 'ALL') {
+      if (filters?.category && filters.category !== "ALL") {
         items = items.filter(
-          (item) => item.category.toLowerCase() === filters.category?.toLowerCase()
+          (item) =>
+            item.category.toLowerCase() === filters.category?.toLowerCase(),
         );
       }
       if (filters?.q) {
@@ -306,17 +338,22 @@ export const foundApi = {
           (item) =>
             item.title.toLowerCase().includes(query) ||
             item.description.toLowerCase().includes(query) ||
-            item.location.toLowerCase().includes(query)
+            item.location.toLowerCase().includes(query),
         );
       }
-      return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return items.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     }
 
     const params = new URLSearchParams();
-    if (filters?.status && filters.status.toUpperCase() !== 'ALL') params.set('status', filters.status.toLowerCase());
-    if (filters?.category && filters.category.toUpperCase() !== 'ALL') params.set('category', filters.category);
-    if (filters?.q) params.set('q', filters.q);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    if (filters?.status && filters.status.toUpperCase() !== "ALL")
+      params.set("status", filters.status.toLowerCase());
+    if (filters?.category && filters.category.toUpperCase() !== "ALL")
+      params.set("category", filters.category);
+    if (filters?.q) params.set("q", filters.q);
+    const query = params.toString() ? `?${params.toString()}` : "";
     return apiFetch<ExtendedFoundItem[]>(`/found${query}`);
   },
 
@@ -325,7 +362,7 @@ export const foundApi = {
       await delay();
       const store = getMockStore();
       const item = store.foundItems.find((i) => i.id === id);
-      if (!item) throw new Error('Found item not found');
+      if (!item) throw new Error("Found item not found");
       return item;
     }
     return apiFetch<ExtendedFoundItem>(`/found/${id}`);
@@ -361,9 +398,9 @@ export const foundApi = {
         location: data.location,
         dateFound: data.dateFound,
         imageUrl: data.imageUrl || null,
-        holdingLocation: data.holdingLocation || 'with finder',
-        status: 'OPEN',
-        secretQuestion: data.secretQuestion || 'What distinguishes this item?',
+        holdingLocation: data.holdingLocation || "with finder",
+        status: "OPEN",
+        secretQuestion: data.secretQuestion || "What distinguishes this item?",
         keptAt: data.keptAt,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -374,28 +411,29 @@ export const foundApi = {
     }
     const payload = {
       ...data,
-      imageUrl: data.imageUrl && data.imageUrl.trim() !== '' ? data.imageUrl : null,
-      holdingLocation: data.holdingLocation || 'with finder',
+      imageUrl:
+        data.imageUrl && data.imageUrl.trim() !== "" ? data.imageUrl : null,
+      holdingLocation: data.holdingLocation || "with finder",
     };
-    return apiFetch<ExtendedFoundItem>('/found', {
-      method: 'POST',
+    return apiFetch<ExtendedFoundItem>("/found", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   },
 
   async claim(
     id: string,
-    data: { note: string; proofImageUrl?: string; answer?: string }
+    data: { note: string; proofImageUrl?: string; answer?: string },
   ): Promise<any> {
     if (USE_MOCKS) {
       await delay(250);
       const store = getMockStore();
       const index = store.foundItems.findIndex((i) => i.id === id);
-      if (index === -1) throw new Error('Found item not found');
+      if (index === -1) throw new Error("Found item not found");
 
       store.foundItems[index] = {
         ...store.foundItems[index],
-        status: 'CLAIMED',
+        status: "CLAIMED",
         claimedByUserId: store.user.id,
         claimedByUser: {
           id: store.user.id,
@@ -411,17 +449,20 @@ export const foundApi = {
       return store.foundItems[index];
     }
     return apiFetch<any>(`/found/${id}/claim`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  async updateStatus(id: string, status: FoundStatus): Promise<ExtendedFoundItem> {
+  async updateStatus(
+    id: string,
+    status: FoundStatus,
+  ): Promise<ExtendedFoundItem> {
     if (USE_MOCKS) {
       await delay();
       const store = getMockStore();
       const index = store.foundItems.findIndex((i) => i.id === id);
-      if (index === -1) throw new Error('Found item not found');
+      if (index === -1) throw new Error("Found item not found");
       store.foundItems[index] = {
         ...store.foundItems[index],
         status,
@@ -431,7 +472,7 @@ export const foundApi = {
       return store.foundItems[index];
     }
     return apiFetch<ExtendedFoundItem>(`/found/${id}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify({ status }),
     });
   },
@@ -441,7 +482,9 @@ export const foundApi = {
 // Marketplace API
 // -------------------------------------------------------------------------
 export const marketplaceApi = {
-  async list(filters?: ListingFilterQuery & { condition?: string }): Promise<Listing[]> {
+  async list(
+    filters?: ListingFilterQuery & { condition?: string },
+  ): Promise<Listing[]> {
     if (USE_MOCKS) {
       await delay();
       const store = getMockStore();
@@ -450,38 +493,48 @@ export const marketplaceApi = {
         isWishlisted: store.wishlistIds.includes(item.id),
       }));
 
-      if (filters?.category && filters.category !== 'ALL') {
+      if (filters?.category && filters.category !== "ALL") {
         items = items.filter(
-          (item) => item.category.toLowerCase() === filters.category?.toLowerCase()
+          (item) =>
+            item.category.toLowerCase() === filters.category?.toLowerCase(),
         );
       }
-      if (filters?.condition && filters.condition !== 'ALL') {
+      if (filters?.condition && filters.condition !== "ALL") {
         items = items.filter((item) => item.condition === filters.condition);
       }
       if (filters?.minPrice !== undefined) {
         items = items.filter((item) => item.price >= (filters.minPrice || 0));
       }
       if (filters?.maxPrice !== undefined) {
-        items = items.filter((item) => item.price <= (filters.maxPrice || Infinity));
+        items = items.filter(
+          (item) => item.price <= (filters.maxPrice || Infinity),
+        );
       }
       if (filters?.q) {
         const query = filters.q.toLowerCase();
         items = items.filter(
           (item) =>
             item.title.toLowerCase().includes(query) ||
-            item.description.toLowerCase().includes(query)
+            item.description.toLowerCase().includes(query),
         );
       }
-      return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return items.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     }
 
     const params = new URLSearchParams();
-    if (filters?.category && filters.category.toUpperCase() !== 'ALL') params.set('category', filters.category);
-    if (filters?.condition && filters.condition.toUpperCase() !== 'ALL') params.set('condition', filters.condition);
-    if (filters?.minPrice !== undefined && !isNaN(filters.minPrice)) params.set('minPrice', filters.minPrice.toString());
-    if (filters?.maxPrice !== undefined && !isNaN(filters.maxPrice)) params.set('maxPrice', filters.maxPrice.toString());
-    if (filters?.q) params.set('q', filters.q);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    if (filters?.category && filters.category.toUpperCase() !== "ALL")
+      params.set("category", filters.category);
+    if (filters?.condition && filters.condition.toUpperCase() !== "ALL")
+      params.set("condition", filters.condition);
+    if (filters?.minPrice !== undefined && !isNaN(filters.minPrice))
+      params.set("minPrice", filters.minPrice.toString());
+    if (filters?.maxPrice !== undefined && !isNaN(filters.maxPrice))
+      params.set("maxPrice", filters.maxPrice.toString());
+    if (filters?.q) params.set("q", filters.q);
+    const query = params.toString() ? `?${params.toString()}` : "";
     const res = await apiFetch<any>(`/listings${query}`);
     return Array.isArray(res) ? res : res.items || [];
   },
@@ -491,7 +544,7 @@ export const marketplaceApi = {
       await delay();
       const store = getMockStore();
       const item = store.listings.find((i) => i.id === id);
-      if (!item) throw new Error('Listing not found');
+      if (!item) throw new Error("Listing not found");
       return {
         ...item,
         isWishlisted: store.wishlistIds.includes(item.id),
@@ -525,10 +578,13 @@ export const marketplaceApi = {
         price: data.price,
         category: data.category,
         condition: data.condition,
-        imageUrls: data.imageUrls.length > 0 ? data.imageUrls : [
-          'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
-        ],
-        status: 'AVAILABLE',
+        imageUrls:
+          data.imageUrls.length > 0
+            ? data.imageUrls
+            : [
+                "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
+              ],
+        status: "AVAILABLE",
         isWishlisted: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -537,8 +593,8 @@ export const marketplaceApi = {
       saveMockStore(store);
       return newListing;
     }
-    return apiFetch<Listing>('/listings', {
-      method: 'POST',
+    return apiFetch<Listing>("/listings", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -548,7 +604,7 @@ export const marketplaceApi = {
       await delay();
       const store = getMockStore();
       const index = store.listings.findIndex((i) => i.id === id);
-      if (index === -1) throw new Error('Listing not found');
+      if (index === -1) throw new Error("Listing not found");
       store.listings[index] = {
         ...store.listings[index],
         ...updates,
@@ -558,7 +614,7 @@ export const marketplaceApi = {
       return store.listings[index];
     }
     return apiFetch<Listing>(`/listings/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(updates),
     });
   },
@@ -573,11 +629,13 @@ export const marketplaceApi = {
       return { id, deleted: true };
     }
     return apiFetch<{ id: string; deleted: boolean }>(`/listings/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   },
 
-  async toggleWishlist(id: string): Promise<{ listingId: string; isWishlisted: boolean }> {
+  async toggleWishlist(
+    id: string,
+  ): Promise<{ listingId: string; isWishlisted: boolean }> {
     if (USE_MOCKS) {
       await delay(100);
       const store = getMockStore();
@@ -591,9 +649,12 @@ export const marketplaceApi = {
       return { listingId: id, isWishlisted: !exists };
     }
 
-    return apiFetch<{ listingId: string; isWishlisted: boolean }>(`/listings/${id}/wishlist`, {
-      method: 'POST',
-    });
+    return apiFetch<{ listingId: string; isWishlisted: boolean }>(
+      `/listings/${id}/wishlist`,
+      {
+        method: "POST",
+      },
+    );
   },
 
   async getWishlist(): Promise<Listing[]> {
@@ -604,7 +665,7 @@ export const marketplaceApi = {
         .filter((item) => store.wishlistIds.includes(item.id))
         .map((item) => ({ ...item, isWishlisted: true }));
     }
-    return apiFetch<Listing[]>('/wishlist');
+    return apiFetch<Listing[]>("/wishlist");
   },
 };
 
@@ -625,11 +686,510 @@ export const uploadsApi = {
     }
 
     const formData = new FormData();
-    formData.append('file', file);
-    return apiFetch<{ url: string }>('/uploads', {
-      method: 'POST',
+    formData.append("file", file);
+    return apiFetch<{ url: string }>("/uploads", {
+      method: "POST",
       body: formData,
     });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Train Buddy Radar API
+// -------------------------------------------------------------------------
+export const tripsApi = {
+  async post(data: {
+    trainNumber: string;
+    trainName?: string;
+    fromStation: string;
+    toStation: string;
+    date: string;
+    departureTime?: string;
+    notes?: string;
+  }): Promise<TrainTrip> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const newTrip: TrainTrip = {
+        id: `trip_${Date.now()}`,
+        userId: store.user.id,
+        user: {
+          id: store.user.id,
+          name: store.user.name,
+          email: store.user.email,
+          avatarUrl: store.user.avatarUrl,
+        },
+        trainNumber: data.trainNumber.trim(),
+        trainName: data.trainName || "Express Train",
+        originStation: data.fromStation.trim().toUpperCase(),
+        destinationStation: data.toStation.trim().toUpperCase(),
+        departureDate: data.date,
+        departureTime: data.departureTime || "12:00",
+        notes: data.notes || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.trainTrips.unshift(newTrip);
+      saveMockStore(store);
+      return newTrip;
+    }
+
+    return apiFetch<TrainTrip>("/trips", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getMine(): Promise<TrainTrip[]> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      return store.trainTrips.filter((t) => t.userId === store.user.id);
+    }
+    return apiFetch<TrainTrip[]>("/trips/mine");
+  },
+
+  async getBuddies(tripId: string): Promise<TrainBuddyMatch[]> {
+    if (USE_MOCKS) {
+      await delay(200);
+      const store = getMockStore();
+      const currentTrip = store.trainTrips.find((t) => t.id === tripId);
+      if (!currentTrip) return [];
+
+      const matches = store.trainTrips.filter(
+        (t) =>
+          t.id !== currentTrip.id &&
+          t.trainNumber === currentTrip.trainNumber &&
+          (t.departureDate === currentTrip.departureDate ||
+            (t as any).date === (currentTrip as any).date) &&
+          (t.originStation === currentTrip.originStation ||
+            (t as any).fromStation === (currentTrip as any).fromStation) &&
+          (t.destinationStation === currentTrip.destinationStation ||
+            (t as any).toStation === (currentTrip as any).toStation),
+      );
+
+      return matches.map((m) => ({
+        trip: m,
+        isSameCoach: false,
+        distanceHours: 0,
+      }));
+    }
+    return apiFetch<TrainBuddyMatch[]>(`/trips/${tripId}/buddies`);
+  },
+
+  async delete(tripId: string): Promise<{ id: string; deleted: boolean }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      store.trainTrips = store.trainTrips.filter((t) => t.id !== tripId);
+      saveMockStore(store);
+      return { id: tripId, deleted: true };
+    }
+    return apiFetch<{ id: string; deleted: boolean }>(`/trips/${tripId}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Ride Sharing API
+// -------------------------------------------------------------------------
+export const ridesApi = {
+  async create(data: {
+    origin: string;
+    destination: string;
+    departureTime: string;
+    totalSeats: number;
+    estimatedFare?: number;
+    notes?: string;
+  }): Promise<Ride> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const seats = Number(data.totalSeats);
+      const avail = Math.max(0, seats - 1);
+      const newRide: Ride = {
+        id: `ride_${Date.now()}`,
+        creatorId: store.user.id,
+        creator: {
+          id: store.user.id,
+          name: store.user.name,
+          email: store.user.email,
+          avatarUrl: store.user.avatarUrl,
+        },
+        origin: data.origin,
+        destination: data.destination,
+        departureTime: data.departureTime,
+        totalSeats: seats,
+        availableSeats: avail,
+        estimatedFare: data.estimatedFare || 50,
+        status: avail === 0 ? "FULL" : "OPEN",
+        notes: data.notes || null,
+        passengers: [
+          {
+            id: `rp_${Date.now()}`,
+            rideId: `ride_${Date.now()}`,
+            userId: store.user.id,
+            user: {
+              id: store.user.id,
+              name: store.user.name,
+              email: store.user.email,
+              avatarUrl: store.user.avatarUrl || null,
+            },
+            joinedAt: new Date().toISOString(),
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.rides.unshift(newRide);
+      saveMockStore(store);
+      return newRide;
+    }
+
+    return apiFetch<Ride>("/rides", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async list(params?: {
+    origin?: string;
+    destination?: string;
+    status?: string;
+  }): Promise<Ride[]> {
+    if (USE_MOCKS) {
+      await delay(100);
+      const store = getMockStore();
+      let results = store.rides.slice();
+      if (params?.status) {
+        results = results.filter((r) => r.status === params.status);
+      }
+      if (params?.origin) {
+        results = results.filter((r) =>
+          r.origin.toLowerCase().includes(params.origin!.toLowerCase()),
+        );
+      }
+      if (params?.destination) {
+        results = results.filter((r) =>
+          r.destination
+            .toLowerCase()
+            .includes(params.destination!.toLowerCase()),
+        );
+      }
+      return results;
+    }
+
+    const query = new URLSearchParams();
+    if (params?.origin) query.set("origin", params.origin);
+    if (params?.destination) query.set("destination", params.destination);
+    if (params?.status) query.set("status", params.status);
+
+    const qs = query.toString();
+    return apiFetch<Ride[]>(`/rides${qs ? `?${qs}` : ""}`);
+  },
+
+  async get(id: string): Promise<Ride> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const ride = store.rides.find((r) => r.id === id);
+      if (!ride) throw new Error("Ride not found");
+      return ride;
+    }
+    return apiFetch<Ride>(`/rides/${id}`);
+  },
+
+  async join(
+    id: string,
+  ): Promise<{
+    id: string;
+    availableSeats: number;
+    status: RideStatus;
+    joined: boolean;
+  }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const ride = store.rides.find((r) => r.id === id);
+      if (!ride) throw new Error("Ride not found");
+      if (ride.availableSeats <= 0)
+        throw new Error("No seats available on this ride");
+
+      ride.availableSeats -= 1;
+      if (ride.availableSeats === 0) ride.status = "FULL";
+
+      if (!ride.passengers) ride.passengers = [];
+      ride.passengers.push({
+        id: `rp_${Date.now()}`,
+        rideId: ride.id,
+        userId: store.user.id,
+        user: {
+          id: store.user.id,
+          name: store.user.name,
+          email: store.user.email,
+          avatarUrl: store.user.avatarUrl || null,
+        },
+        joinedAt: new Date().toISOString(),
+      });
+
+      saveMockStore(store);
+      return {
+        id: ride.id,
+        availableSeats: ride.availableSeats,
+        status: ride.status,
+        joined: true,
+      };
+    }
+    return apiFetch<{
+      id: string;
+      availableSeats: number;
+      status: RideStatus;
+      joined: boolean;
+    }>(`/rides/${id}/join`, {
+      method: "POST",
+    });
+  },
+
+  async leave(
+    id: string,
+  ): Promise<{
+    id: string;
+    availableSeats: number;
+    status: RideStatus;
+    left: boolean;
+  }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const ride = store.rides.find((r) => r.id === id);
+      if (!ride) throw new Error("Ride not found");
+
+      ride.availableSeats = Math.min(ride.totalSeats, ride.availableSeats + 1);
+      if (ride.status === "FULL") ride.status = "OPEN";
+      if (ride.passengers) {
+        ride.passengers = ride.passengers.filter(
+          (p) => p.userId !== store.user.id,
+        );
+      }
+
+      saveMockStore(store);
+      return {
+        id: ride.id,
+        availableSeats: ride.availableSeats,
+        status: ride.status,
+        left: true,
+      };
+    }
+    return apiFetch<{
+      id: string;
+      availableSeats: number;
+      status: RideStatus;
+      left: boolean;
+    }>(`/rides/${id}/leave`, {
+      method: "POST",
+    });
+  },
+
+  async updateStatus(
+    id: string,
+    status: RideStatus,
+  ): Promise<{ id: string; status: RideStatus }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const ride = store.rides.find((r) => r.id === id);
+      if (!ride) throw new Error("Ride not found");
+      ride.status = status;
+      saveMockStore(store);
+      return { id: ride.id, status };
+    }
+    return apiFetch<{ id: string; status: RideStatus }>(`/rides/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async getFareSplit(id: string, totalFare?: number): Promise<FareSplitInfo> {
+    if (USE_MOCKS) {
+      await delay(80);
+      const store = getMockStore();
+      const ride = store.rides.find((r) => r.id === id);
+      if (!ride) throw new Error("Ride not found");
+
+      const fare = totalFare !== undefined ? totalFare : ride.estimatedFare;
+      const count =
+        ride.passengers && ride.passengers.length > 0
+          ? ride.passengers.length
+          : 1;
+      const farePerPerson = parseFloat((fare / count).toFixed(2));
+
+      return {
+        rideId: ride.id,
+        totalFare: fare,
+        passengerCount: count,
+        farePerPerson,
+        participants: (ride.passengers || []).map((p) => ({
+          userId: p.userId,
+          name: p.user?.name || "Passenger",
+          amount: farePerPerson,
+        })),
+      };
+    }
+
+    const qs = totalFare !== undefined ? `?totalFare=${totalFare}` : "";
+    return apiFetch<FareSplitInfo>(`/rides/${id}/fare-split${qs}`);
+  },
+};
+
+// -------------------------------------------------------------------------
+// Chat API
+// -------------------------------------------------------------------------
+export const chatApi = {
+  async getConversations(): Promise<Conversation[]> {
+    if (USE_MOCKS) {
+      await delay(100);
+      const store = getMockStore();
+      return store.conversations;
+    }
+    return apiFetch<Conversation[]>("/conversations");
+  },
+
+  async startConversation(
+    recipientId: string,
+  ): Promise<{ id: string; participantIds: string[] }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const existing = store.conversations.find((c) =>
+        c.participantIds.includes(recipientId),
+      );
+      if (existing) {
+        return { id: existing.id, participantIds: existing.participantIds };
+      }
+
+      const newConv: Conversation = {
+        id: `conv_${Date.now()}`,
+        participantIds: [store.user.id, recipientId],
+        participants: [
+          {
+            id: recipientId,
+            name: "Campus Student",
+            email: "student@campus.edu",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.conversations.unshift(newConv);
+      saveMockStore(store);
+      return { id: newConv.id, participantIds: newConv.participantIds };
+    }
+
+    return apiFetch<{ id: string; participantIds: string[] }>(
+      "/conversations",
+      {
+        method: "POST",
+        body: JSON.stringify({ recipientId }),
+      },
+    );
+  },
+
+  async getMessages(conversationId: string): Promise<Message[]> {
+    if (USE_MOCKS) {
+      await delay(100);
+      const store = getMockStore();
+      return store.messages.filter((m) => m.conversationId === conversationId);
+    }
+    return apiFetch<Message[]>(`/conversations/${conversationId}/messages`);
+  },
+
+  async sendMessage(conversationId: string, content: string): Promise<Message> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const newMsg: Message = {
+        id: `msg_${Date.now()}`,
+        conversationId,
+        senderId: store.user.id,
+        sender: {
+          id: store.user.id,
+          name: store.user.name,
+          email: store.user.email,
+          avatarUrl: store.user.avatarUrl,
+        },
+        content: content.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      store.messages.push(newMsg);
+
+      const conv = store.conversations.find((c) => c.id === conversationId);
+      if (conv) {
+        conv.lastMessage = newMsg;
+        conv.updatedAt = new Date().toISOString();
+      }
+
+      saveMockStore(store);
+      return newMsg;
+    }
+
+    return apiFetch<Message>(`/conversations/${conversationId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Notifications API
+// -------------------------------------------------------------------------
+export const notificationsApi = {
+  async list(): Promise<Notification[]> {
+    if (USE_MOCKS) {
+      await delay(100);
+      const store = getMockStore();
+      return store.notifications;
+    }
+    return apiFetch<Notification[]>("/notifications");
+  },
+
+  async markAsRead(id: string): Promise<{ id: string; isRead: boolean }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const notif = store.notifications.find((n) => n.id === id);
+      if (notif) notif.isRead = true;
+      saveMockStore(store);
+      return { id, isRead: true };
+    }
+    return apiFetch<{ id: string; isRead: boolean }>(
+      `/notifications/${id}/read`,
+      {
+        method: "PATCH",
+      },
+    );
+  },
+
+  async markAllAsRead(): Promise<{
+    success: boolean;
+    markedReadCount: number;
+  }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      store.notifications.forEach((n) => (n.isRead = true));
+      saveMockStore(store);
+      return { success: true, markedReadCount: store.notifications.length };
+    }
+    return apiFetch<{ success: boolean; markedReadCount: number }>(
+      "/notifications/read-all",
+      {
+        method: "PATCH",
+      },
+    );
   },
 };
 
@@ -643,8 +1203,8 @@ export const feedApi = {
     marketplace: Listing[];
   }> {
     const [lost, found, marketplace] = await Promise.all([
-      lostApi.list({ status: 'OPEN' }),
-      foundApi.list({ status: 'OPEN' }),
+      lostApi.list({ status: "OPEN" }),
+      foundApi.list({ status: "OPEN" }),
       marketplaceApi.list(),
     ]);
 
@@ -679,15 +1239,15 @@ export const tripsApi = {
           name: store.user.name,
           email: store.user.email,
           avatarUrl: store.user.avatarUrl,
-          department: store.user.department || 'Engineering',
-          year: store.user.year || '3rd Year',
+          department: store.user.department || "Engineering",
+          year: store.user.year || "3rd Year",
         },
         trainNumber: data.trainNumber.trim(),
-        trainName: data.trainName || 'Express Journey',
+        trainName: data.trainName || "Express Journey",
         fromStation: data.fromStation.trim().toUpperCase(),
         toStation: data.toStation.trim().toUpperCase(),
         date: data.date,
-        departureTime: data.departureTime || '12:00',
+        departureTime: data.departureTime || "12:00",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -699,13 +1259,14 @@ export const tripsApi = {
         {
           trip: {
             id: `tb_${Date.now()}_1`,
-            userId: 'usr_mock_buddy_1',
+            userId: "usr_mock_buddy_1",
             user: {
-              id: 'usr_mock_buddy_1',
-              name: 'Kabir Mehta',
-              avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
-              department: 'Computer Science',
-              year: '3rd Year',
+              id: "usr_mock_buddy_1",
+              name: "Kabir Mehta",
+              avatarUrl:
+                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
+              department: "Computer Science",
+              year: "3rd Year",
             },
             trainNumber: newTrip.trainNumber,
             trainName: newTrip.trainName,
@@ -720,13 +1281,14 @@ export const tripsApi = {
         {
           trip: {
             id: `tb_${Date.now()}_2`,
-            userId: 'usr_mock_buddy_2',
+            userId: "usr_mock_buddy_2",
             user: {
-              id: 'usr_mock_buddy_2',
-              name: 'Sneha Rao',
-              avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-              department: 'Data Science',
-              year: '2nd Year',
+              id: "usr_mock_buddy_2",
+              name: "Sneha Rao",
+              avatarUrl:
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
+              department: "Data Science",
+              year: "2nd Year",
             },
             trainNumber: newTrip.trainNumber,
             trainName: newTrip.trainName,
@@ -744,10 +1306,10 @@ export const tripsApi = {
       store.notifications.unshift({
         id: `notif_${Date.now()}`,
         userId: store.user.id,
-        title: 'New Train Buddy Radar Alert!',
+        title: "New Train Buddy Radar Alert!",
         message: `2 students are also on Train #${newTrip.trainNumber} (${newTrip.fromStation} → ${newTrip.toStation})!`,
-        type: 'MATCH',
-        link: '/train-buddy',
+        type: "MATCH",
+        link: "/train-buddy",
         isRead: false,
         createdAt: new Date().toISOString(),
       });
@@ -756,8 +1318,8 @@ export const tripsApi = {
       return newTrip;
     }
 
-    return apiFetch<TrainTrip>('/trips', {
-      method: 'POST',
+    return apiFetch<TrainTrip>("/trips", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -768,7 +1330,7 @@ export const tripsApi = {
       const store = getMockStore();
       return store.trainTrips;
     }
-    return apiFetch<TrainTrip[]>('/trips/mine');
+    return apiFetch<TrainTrip[]>("/trips/mine");
   },
 
   async getBuddies(tripId: string): Promise<TrainBuddyMatch[]> {
@@ -790,7 +1352,7 @@ export const tripsApi = {
       return { id: tripId, deleted: true };
     }
     return apiFetch<{ id: string; deleted: boolean }>(`/trips/${tripId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   },
 };
@@ -799,30 +1361,45 @@ export const tripsApi = {
 // Ride Splitting API
 // -------------------------------------------------------------------------
 export const ridesApi = {
-  async list(filters?: { origin?: string; destination?: string; status?: string }): Promise<Ride[]> {
+  async list(filters?: {
+    origin?: string;
+    destination?: string;
+    status?: string;
+  }): Promise<Ride[]> {
     if (USE_MOCKS) {
       await delay();
       const store = getMockStore();
       let list = [...store.rides];
 
-      if (filters?.status && filters.status !== 'ALL') {
+      if (filters?.status && filters.status !== "ALL") {
         list = list.filter((r) => r.status === filters.status);
       }
       if (filters?.origin) {
-        list = list.filter((r) => r.origin.toLowerCase().includes(filters.origin!.toLowerCase()));
+        list = list.filter((r) =>
+          r.origin.toLowerCase().includes(filters.origin!.toLowerCase()),
+        );
       }
       if (filters?.destination) {
-        list = list.filter((r) => r.destination.toLowerCase().includes(filters.destination!.toLowerCase()));
+        list = list.filter((r) =>
+          r.destination
+            .toLowerCase()
+            .includes(filters.destination!.toLowerCase()),
+        );
       }
 
-      return list.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
+      return list.sort(
+        (a, b) =>
+          new Date(b.createdAt || "").getTime() -
+          new Date(a.createdAt || "").getTime(),
+      );
     }
 
     const params = new URLSearchParams();
-    if (filters?.status && filters.status !== 'ALL') params.set('status', filters.status);
-    if (filters?.origin) params.set('origin', filters.origin);
-    if (filters?.destination) params.set('destination', filters.destination);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    if (filters?.status && filters.status !== "ALL")
+      params.set("status", filters.status);
+    if (filters?.origin) params.set("origin", filters.origin);
+    if (filters?.destination) params.set("destination", filters.destination);
+    const query = params.toString() ? `?${params.toString()}` : "";
     return apiFetch<Ride[]>(`/rides${query}`);
   },
 
@@ -831,7 +1408,7 @@ export const ridesApi = {
       await delay();
       const store = getMockStore();
       const ride = store.rides.find((r) => r.id === id);
-      if (!ride) throw new Error('Ride not found');
+      if (!ride) throw new Error("Ride not found");
       return ride;
     }
     return apiFetch<Ride>(`/rides/${id}`);
@@ -859,8 +1436,8 @@ export const ridesApi = {
           name: store.user.name,
           email: store.user.email,
           avatarUrl: store.user.avatarUrl,
-          department: store.user.department || 'Engineering',
-          year: store.user.year || '3rd Year',
+          department: store.user.department || "Engineering",
+          year: store.user.year || "3rd Year",
         },
         origin: data.origin.trim(),
         destination: data.destination.trim(),
@@ -868,7 +1445,7 @@ export const ridesApi = {
         totalSeats: seats,
         availableSeats: available,
         estimatedFare: Number(data.estimatedFare) || 0,
-        status: available === 0 ? 'FULL' : 'OPEN',
+        status: available === 0 ? "FULL" : "OPEN",
         notes: data.notes ? data.notes.trim() : null,
         passengers: [
           {
@@ -943,31 +1520,40 @@ export const ridesApi = {
       return newRide;
     }
 
-    return apiFetch<Ride>('/rides', {
-      method: 'POST',
+    return apiFetch<Ride>("/rides", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  async join(id: string): Promise<{ id: string; availableSeats: number; status: string; joined: boolean }> {
+  async join(
+    id: string,
+  ): Promise<{
+    id: string;
+    availableSeats: number;
+    status: string;
+    joined: boolean;
+  }> {
     if (USE_MOCKS) {
       await delay(200);
       const store = getMockStore();
       const index = store.rides.findIndex((r) => r.id === id);
-      if (index === -1) throw new Error('Ride not found');
+      if (index === -1) throw new Error("Ride not found");
 
       const ride = store.rides[index];
-      if (ride.availableSeats <= 0 || ride.status !== 'OPEN') {
-        throw new Error('This ride is no longer open for joining.');
+      if (ride.availableSeats <= 0 || ride.status !== "OPEN") {
+        throw new Error("This ride is no longer open for joining.");
       }
 
-      const isAlready = (ride.members || ride.passengers || []).some((m) => m.userId === store.user.id);
+      const isAlready = (ride.members || ride.passengers || []).some(
+        (m) => m.userId === store.user.id,
+      );
       if (isAlready) {
-        throw new Error('You are already a passenger on this ride.');
+        throw new Error("You are already a passenger on this ride.");
       }
 
       const nextSeats = ride.availableSeats - 1;
-      const nextStatus = nextSeats === 0 ? 'FULL' : 'OPEN';
+      const nextStatus = nextSeats === 0 ? "FULL" : "OPEN";
 
       const member = {
         id: `rm_${Date.now()}`,
@@ -1002,49 +1588,83 @@ export const ridesApi = {
       }
 
       saveMockStore(store);
-      return { id: ride.id, availableSeats: nextSeats, status: nextStatus, joined: true };
+      return {
+        id: ride.id,
+        availableSeats: nextSeats,
+        status: nextStatus,
+        joined: true,
+      };
     }
 
-    return apiFetch<{ id: string; availableSeats: number; status: string; joined: boolean }>(`/rides/${id}/join`, {
-      method: 'POST',
+    return apiFetch<{
+      id: string;
+      availableSeats: number;
+      status: string;
+      joined: boolean;
+    }>(`/rides/${id}/join`, {
+      method: "POST",
     });
   },
 
-  async leave(id: string): Promise<{ id: string; availableSeats: number; status: string; left: boolean }> {
+  async leave(
+    id: string,
+  ): Promise<{
+    id: string;
+    availableSeats: number;
+    status: string;
+    left: boolean;
+  }> {
     if (USE_MOCKS) {
       await delay(200);
       const store = getMockStore();
       const index = store.rides.findIndex((r) => r.id === id);
-      if (index === -1) throw new Error('Ride not found');
+      if (index === -1) throw new Error("Ride not found");
 
       const ride = store.rides[index];
       if (ride.creatorId === store.user.id) {
-        throw new Error('Ride creator cannot leave the ride.');
+        throw new Error("Ride creator cannot leave the ride.");
       }
 
-      ride.passengers = (ride.passengers || []).filter((p) => p.userId !== store.user.id);
-      ride.members = (ride.members || []).filter((p) => p.userId !== store.user.id);
+      ride.passengers = (ride.passengers || []).filter(
+        (p) => p.userId !== store.user.id,
+      );
+      ride.members = (ride.members || []).filter(
+        (p) => p.userId !== store.user.id,
+      );
       ride.availableSeats = Math.min(ride.totalSeats, ride.availableSeats + 1);
-      if (ride.status === 'FULL') {
-        ride.status = 'OPEN';
+      if (ride.status === "FULL") {
+        ride.status = "OPEN";
       }
       ride.updatedAt = new Date().toISOString();
 
       saveMockStore(store);
-      return { id: ride.id, availableSeats: ride.availableSeats, status: ride.status, left: true };
+      return {
+        id: ride.id,
+        availableSeats: ride.availableSeats,
+        status: ride.status,
+        left: true,
+      };
     }
 
-    return apiFetch<{ id: string; availableSeats: number; status: string; left: boolean }>(`/rides/${id}/leave`, {
-      method: 'POST',
+    return apiFetch<{
+      id: string;
+      availableSeats: number;
+      status: string;
+      left: boolean;
+    }>(`/rides/${id}/leave`, {
+      method: "POST",
     });
   },
 
-  async updateStatus(id: string, status: RideStatus): Promise<{ id: string; status: RideStatus }> {
+  async updateStatus(
+    id: string,
+    status: RideStatus,
+  ): Promise<{ id: string; status: RideStatus }> {
     if (USE_MOCKS) {
       await delay(150);
       const store = getMockStore();
       const index = store.rides.findIndex((r) => r.id === id);
-      if (index === -1) throw new Error('Ride not found');
+      if (index === -1) throw new Error("Ride not found");
       store.rides[index].status = status;
       store.rides[index].updatedAt = new Date().toISOString();
       saveMockStore(store);
@@ -1052,7 +1672,7 @@ export const ridesApi = {
     }
 
     return apiFetch<{ id: string; status: RideStatus }>(`/rides/${id}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify({ status }),
     });
   },
@@ -1062,9 +1682,10 @@ export const ridesApi = {
       await delay(100);
       const store = getMockStore();
       const ride = store.rides.find((r) => r.id === id);
-      if (!ride) throw new Error('Ride not found');
+      if (!ride) throw new Error("Ride not found");
 
-      const members = ride.members || ride.passengers || [{ userId: store.user.id, user: store.user }];
+      const members = ride.members ||
+        ride.passengers || [{ userId: store.user.id, user: store.user }];
       const fare = totalFare !== undefined ? totalFare : ride.estimatedFare;
       const count = Math.max(1, members.length);
       const perPerson = parseFloat((fare / count).toFixed(2));
@@ -1076,13 +1697,13 @@ export const ridesApi = {
         farePerPerson: perPerson,
         participants: members.map((m: any) => ({
           userId: m.userId,
-          name: m.user?.name || 'Passenger',
+          name: m.user?.name || "Passenger",
           amount: perPerson,
         })),
       };
     }
 
-    const query = totalFare !== undefined ? `?totalFare=${totalFare}` : '';
+    const query = totalFare !== undefined ? `?totalFare=${totalFare}` : "";
     return apiFetch<FareSplitInfo>(`/rides/${id}/fare-split${query}`);
   },
 };
@@ -1097,7 +1718,7 @@ export const chatApi = {
       const store = getMockStore();
       return store.conversations;
     }
-    return apiFetch<Conversation[]>('/conversations');
+    return apiFetch<Conversation[]>("/conversations");
   },
 
   async getOrCreate(recipientId: string): Promise<Conversation> {
@@ -1106,7 +1727,10 @@ export const chatApi = {
       const store = getMockStore();
       // Check if direct 1-to-1 conversation exists
       const existing = store.conversations.find(
-        (c) => !c.isGroup && c.participantIds.includes(recipientId) && c.participantIds.includes(store.user.id)
+        (c) =>
+          !c.isGroup &&
+          c.participantIds.includes(recipientId) &&
+          c.participantIds.includes(store.user.id),
       );
       if (existing) return existing;
 
@@ -1119,8 +1743,11 @@ export const chatApi = {
         participants: [
           {
             id: recipientId,
-            name: recipientId.startsWith('usr_') ? recipientId.replace('usr_', 'Peer ') : 'Campus Peer',
-            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
+            name: recipientId.startsWith("usr_")
+              ? recipientId.replace("usr_", "Peer ")
+              : "Campus Peer",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
           },
         ],
         lastMessage: null,
@@ -1133,21 +1760,27 @@ export const chatApi = {
       return newConv;
     }
 
-    return apiFetch<Conversation>('/conversations', {
-      method: 'POST',
+    return apiFetch<Conversation>("/conversations", {
+      method: "POST",
       body: JSON.stringify({ recipientId }),
     });
   },
 
-  async getMessages(conversationId: string, limit = 50, before?: string): Promise<Message[]> {
+  async getMessages(
+    conversationId: string,
+    limit = 50,
+    before?: string,
+  ): Promise<Message[]> {
     if (USE_MOCKS) {
       await delay(100);
       const store = getMockStore();
       return store.messages[conversationId] || [];
     }
     const params = new URLSearchParams({ limit: limit.toString() });
-    if (before) params.set('before', before);
-    return apiFetch<Message[]>(`/conversations/${conversationId}/messages?${params.toString()}`);
+    if (before) params.set("before", before);
+    return apiFetch<Message[]>(
+      `/conversations/${conversationId}/messages?${params.toString()}`,
+    );
   },
 
   async sendMessage(conversationId: string, content: string): Promise<Message> {
@@ -1186,7 +1819,7 @@ export const chatApi = {
     }
 
     return apiFetch<Message>(`/conversations/${conversationId}/messages`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ content }),
     });
   },
@@ -1202,7 +1835,7 @@ export const notificationsApi = {
       const store = getMockStore();
       return store.notifications;
     }
-    return apiFetch<Notification[]>('/notifications');
+    return apiFetch<Notification[]>("/notifications");
   },
 
   async markAsRead(id: string): Promise<{ id: string; isRead: boolean }> {
@@ -1213,12 +1846,18 @@ export const notificationsApi = {
       saveMockStore(store);
       return { id, isRead: true };
     }
-    return apiFetch<{ id: string; isRead: boolean }>(`/notifications/${id}/read`, {
-      method: 'PATCH',
-    });
+    return apiFetch<{ id: string; isRead: boolean }>(
+      `/notifications/${id}/read`,
+      {
+        method: "PATCH",
+      },
+    );
   },
 
-  async markAllAsRead(): Promise<{ markedReadCount: number; success: boolean }> {
+  async markAllAsRead(): Promise<{
+    markedReadCount: number;
+    success: boolean;
+  }> {
     if (USE_MOCKS) {
       const store = getMockStore();
       let count = 0;
@@ -1231,9 +1870,12 @@ export const notificationsApi = {
       saveMockStore(store);
       return { markedReadCount: count, success: true };
     }
-    return apiFetch<{ markedReadCount: number; success: boolean }>('/notifications/read-all', {
-      method: 'PATCH',
-    });
+    return apiFetch<{ markedReadCount: number; success: boolean }>(
+      "/notifications/read-all",
+      {
+        method: "PATCH",
+      },
+    );
   },
 };
 
@@ -1244,6 +1886,10 @@ export const api = {
   found: foundApi,
   marketplace: marketplaceApi,
   uploads: uploadsApi,
+  trips: tripsApi,
+  rides: ridesApi,
+  chat: chatApi,
+  notifications: notificationsApi,
   feed: feedApi,
   trips: tripsApi,
   rides: ridesApi,
@@ -1252,4 +1898,3 @@ export const api = {
 };
 
 export default api;
-
