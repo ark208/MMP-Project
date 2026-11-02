@@ -9,22 +9,24 @@ async function main() {
   await prisma.report.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.message.deleteMany();
-  await prisma.conversationParticipant.deleteMany();
+  await prisma.conversationMember.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.wishlist.deleteMany();
   await prisma.listing.deleteMany();
-  await prisma.ridePassenger.deleteMany();
+  await prisma.rideMember.deleteMany();
   await prisma.ride.deleteMany();
   await prisma.trainTrip.deleteMany();
   await prisma.foundItem.deleteMany();
   await prisma.lostItem.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create demo users
+  // Create demo users with department and year
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@campus.edu',
       name: 'Campus Admin',
+      department: 'Campus Safety',
+      year: 'Staff',
       role: 'ADMIN',
       phone: '+15550001111',
     },
@@ -34,6 +36,8 @@ async function main() {
     data: {
       email: 'student@campus.edu',
       name: 'Alex Rivera',
+      department: 'Computer Science',
+      year: '3rd Year',
       role: 'USER',
       phone: '+15550002222',
     },
@@ -43,8 +47,21 @@ async function main() {
     data: {
       email: 'buddy@campus.edu',
       name: 'Sam Chen',
+      department: 'Mechanical Engineering',
+      year: '2nd Year',
       role: 'USER',
       phone: '+15550003333',
+    },
+  });
+
+  const peerUser2 = await prisma.user.create({
+    data: {
+      email: 'jordan@campus.edu',
+      name: 'Jordan Lee',
+      department: 'Physics',
+      year: '4th Year',
+      role: 'USER',
+      phone: '+15550004444',
     },
   });
 
@@ -74,19 +91,28 @@ async function main() {
     },
   });
 
-  // Seed Train Trip
+  // Seed Train Trips (No PNR or seat stored!)
   await prisma.trainTrip.create({
     data: {
       userId: studentUser.id,
       trainNumber: '12951',
       trainName: 'Express Express',
-      originStation: 'NDLS',
-      destinationStation: 'BCT',
-      departureDate: '2026-11-20',
+      fromStation: 'NDLS',
+      toStation: 'BCT',
+      date: '2026-11-20',
       departureTime: '16:55',
-      coach: 'B4',
-      seat: '32',
-      notes: 'Going home for Thanksgiving break! Let me know if anyone wants to grab dinner at the junction.',
+    },
+  });
+
+  await prisma.trainTrip.create({
+    data: {
+      userId: peerUser.id,
+      trainNumber: '12951',
+      trainName: 'Express Express',
+      fromStation: 'NDLS',
+      toStation: 'BCT',
+      date: '2026-11-20',
+      departureTime: '16:55',
     },
   });
 
@@ -105,17 +131,42 @@ async function main() {
     },
   });
 
-  await prisma.ridePassenger.create({
+  await prisma.rideMember.create({
     data: {
       rideId: demoRide.id,
       userId: studentUser.id,
     },
   });
 
-  await prisma.ridePassenger.create({
+  await prisma.rideMember.create({
     data: {
       rideId: demoRide.id,
       userId: peerUser.id,
+    },
+  });
+
+  // Seed Ride Group Conversation
+  const rideConv = await prisma.conversation.create({
+    data: {
+      isGroup: true,
+      title: 'Ride to Airport Terminal 2',
+      rideId: demoRide.id,
+    },
+  });
+
+  await prisma.conversationMember.createMany({
+    data: [
+      { conversationId: rideConv.id, userId: studentUser.id },
+      { conversationId: rideConv.id, userId: peerUser.id },
+    ],
+  });
+
+  // Seed Message
+  await prisma.message.create({
+    data: {
+      conversationId: rideConv.id,
+      senderId: studentUser.id,
+      content: 'Hey everyone, please be at North Gate by 5:25 AM!',
     },
   });
 
@@ -147,4 +198,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

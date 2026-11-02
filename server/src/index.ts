@@ -5,6 +5,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 
+import { configureSocketIO } from './socket';
+import { authenticateUser, AuthRequest } from './middleware/auth';
+import { HttpError } from './errors';
+import authRoutes from './routes/auth.routes';
+import tripsRoutes from './routes/trips.routes';
+import ridesRoutes from './routes/rides.routes';
+import chatRoutes from './routes/chat.routes';
+import notificationsRoutes from './routes/notifications.routes';
+
 dotenv.config();
 
 const app = express();
@@ -22,19 +31,22 @@ const io = new SocketIOServer(server, {
   },
 });
 
+// Configure Socket.io with JWT Handshake Auth and Event Handlers
+configureSocketIO(io);
+
 // Middleware
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Root & Health check conforming to response envelope
+// Health & Root check conforming to response envelope
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     data: {
       name: 'CampusLoop API',
       status: 'healthy',
-      version: '1.0.0',
+      version: '2.0.0',
       timestamp: new Date().toISOString(),
     },
   });
@@ -50,34 +62,19 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Socket.io connection handlers
-io.on('connection', (socket) => {
-  console.log(`[Socket] User connected: ${socket.id}`);
-
-  socket.on('chat:join', (conversationId: string) => {
-    socket.join(`conversation:${conversationId}`);
-    console.log(`[Socket] ${socket.id} joined conversation:${conversationId}`);
-  });
-
-  socket.on('chat:leave', (conversationId: string) => {
-    socket.leave(`conversation:${conversationId}`);
-    console.log(`[Socket] ${socket.id} left conversation:${conversationId}`);
-  });
-
-  socket.on('ride:subscribe', (rideId: string) => {
-    socket.join(`ride:${rideId}`);
-    console.log(`[Socket] ${socket.id} subscribed to ride:${rideId}`);
-  });
-
-  socket.on('ride:unsubscribe', (rideId: string) => {
-    socket.leave(`ride:${rideId}`);
-    console.log(`[Socket] ${socket.id} unsubscribed from ride:${rideId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`[Socket] User disconnected: ${socket.id}`);
+// GET /api/me - Authenticated user profile
+app.get('/api/me', authenticateUser, (req: AuthRequest, res: Response) => {
+  res.json({
+    data: req.user,
   });
 });
+
+// Mount Module Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/trips', tripsRoutes);
+app.use('/api/rides', ridesRoutes);
+app.use('/api/conversations', chatRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // 404 handler conforming to error response envelope
 app.use((_req: Request, res: Response) => {
@@ -85,28 +82,37 @@ app.use((_req: Request, res: Response) => {
     error: {
       code: 'NOT_FOUND',
       message: 'The requested endpoint does not exist',
+      details: null,
     },
   });
 });
 
-// Global error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[Error]', err);
-  res.status(500).json({
+// Global error handler conforming to error response envelope
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const statusCode = err.statusCode || 500;
+  const code = err.code || 'INTERNAL_SERVER_ERROR';
+  const message = err.message || 'Internal server error occurred';
+  const details = err.details || null;
+
+  if (statusCode >= 500 && process.env.NODE_ENV !== 'test') {
+    console.error('[ServerError]', err);
+  }
+
+  res.status(statusCode).json({
     error: {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: err.message || 'Internal server error occurred',
+      code,
+      message,
+      details,
     },
   });
 });
 
-// Export io and server for application modules
+// Export io and server for application modules & tests
 export { app, server, io };
 
 // Start listening if run directly
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
   server.listen(PORT, () => {
     console.log(`🚀 CampusLoop Server running on http://localhost:${PORT}`);
   });
 }
-

@@ -68,28 +68,30 @@ enum ReportStatus {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  phone     String?
-  avatarUrl String?
-  role      UserRole @default(USER)
-  isBanned  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String
+  department String?
+  year       String?
+  phone      String?
+  avatarUrl  String?
+  role       UserRole @default(USER)
+  isBanned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  lostItems          LostItem[]
-  foundItems         FoundItem[]
-  claimedFoundItems  FoundItem[]       @relation("ClaimedFoundItems")
-  trainTrips         TrainTrip[]
-  createdRides       Ride[]            @relation("CreatedRides")
-  joinedRides        RidePassenger[]
-  listings           Listing[]
-  wishlists          Wishlist[]
-  sentMessages       Message[]
-  notifications      Notification[]
-  filedReports       Report[]          @relation("Reporter")
-  conversations      ConversationParticipant[]
+  lostItems               LostItem[]
+  foundItems              FoundItem[]
+  claimedFoundItems       FoundItem[]          @relation("ClaimedFoundItems")
+  trainTrips              TrainTrip[]
+  createdRides            Ride[]               @relation("CreatedRides")
+  rideMemberships         RideMember[]
+  listings                Listing[]
+  wishlists               Wishlist[]
+  sentMessages            Message[]
+  notifications           Notification[]
+  filedReports            Report[]             @relation("Reporter")
+  conversationMemberships ConversationMember[]
 }
 
 model LostItem {
@@ -127,40 +129,38 @@ model FoundItem {
 }
 
 model TrainTrip {
-  id                 String   @id @default(uuid())
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trainNumber        String
-  trainName          String
-  originStation      String
-  destinationStation String
-  departureDate      String
-  departureTime      String
-  coach              String?
-  seat               String?
-  notes              String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainNumber   String
+  trainName     String?
+  date          String
+  fromStation   String
+  toStation     String
+  departureTime String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Ride {
-  id             String          @id @default(uuid())
+  id             String      @id @default(uuid())
   creatorId      String
-  creator        User            @relation("CreatedRides", fields: [creatorId], references: [id], onDelete: Cascade)
+  creator        User        @relation("CreatedRides", fields: [creatorId], references: [id], onDelete: Cascade)
   origin         String
   destination    String
   departureTime  DateTime
   totalSeats     Int
   availableSeats Int
   estimatedFare  Float
-  status         RideStatus      @default(OPEN)
+  status         RideStatus  @default(OPEN)
   notes          String?
-  passengers     RidePassenger[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  members        RideMember[]
+  conversation   Conversation?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
-model RidePassenger {
+model RideMember {
   id       String   @id @default(uuid())
   rideId   String
   ride     Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
@@ -199,14 +199,18 @@ model Wishlist {
 }
 
 model Conversation {
-  id           String                    @id @default(uuid())
-  participants ConversationParticipant[]
-  messages     Message[]
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
+  id        String               @id @default(uuid())
+  isGroup   Boolean              @default(false)
+  title     String?
+  rideId    String?              @unique
+  ride      Ride?                @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  members   ConversationMember[]
+  messages  Message[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
 }
 
-model ConversationParticipant {
+model ConversationMember {
   id             String       @id @default(uuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -233,22 +237,21 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  type      NotificationType
+  type      NotificationType @default(SYSTEM)
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 }
 
 model Report {
-  id          String           @id @default(uuid())
-  reporterId  String
-  reporter    User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetType  ReportTargetType
-  targetId    String
-  reason      String
-  details     String?
-  status      ReportStatus     @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id         String           @id @default(uuid())
+  reporterId String
+  reporter   User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType ReportTargetType
+  targetId   String
+  reason     String
+  details    String?
+  status     ReportStatus     @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 }
-
