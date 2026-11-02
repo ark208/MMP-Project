@@ -272,7 +272,7 @@ Updates status of a lost item (`OPEN`, `RESOLVED`, `CLOSED`). Only the owner or 
 ---
 
 #### `POST /api/found`
-Reports a found item. Triggers automatic similarity matching against open lost items.
+Reports a found item with holding location and a secret question for ownership claim verification.
 - **Auth**: Required
 - **Request Body**:
   ```json
@@ -282,7 +282,10 @@ Reports a found item. Triggers automatic similarity matching against open lost i
     "category": "Electronics",
     "location": "Student Union",
     "dateFound": "2026-11-01T14:45:00.000Z",
-    "imageUrl": "https://cdn.campusloop.internal/uploads/img_789.jpg"
+    "imageUrl": "https://cdn.campusloop.internal/uploads/img_789.jpg",
+    "holdingLocation": "security office",
+    "secretQuestion": "What cartoon sticker is on the back of the case?",
+    "secretAnswer": "Totoro"
   }
   ```
 - **Response `201 Created`**:
@@ -297,7 +300,11 @@ Reports a found item. Triggers automatic similarity matching against open lost i
       "location": "Student Union",
       "dateFound": "2026-11-01T14:45:00.000Z",
       "imageUrl": "https://cdn.campusloop.internal/uploads/img_789.jpg",
-      "status": "OPEN",
+      "holdingLocation": "security office",
+      "secretQuestion": "What cartoon sticker is on the back of the case?",
+      "status": "open",
+      "isExpired": false,
+      "expiresAt": "2026-12-01T14:45:00.000Z",
       "claimedByUserId": null,
       "createdAt": "2026-11-01T15:10:00.000Z",
       "updatedAt": "2026-11-01T15:10:00.000Z"
@@ -306,9 +313,9 @@ Reports a found item. Triggers automatic similarity matching against open lost i
   ```
 
 #### `GET /api/found`
-Lists found items with optional filters (`status`, `category`, `q`).
+Lists found items with optional filters (`status`, `category`, `q`). Note: `secretAnswer` is strictly omitted.
 - **Auth**: Public or Optional
-- **Query Params**: `?status=OPEN&category=Electronics`
+- **Query Params**: `?status=open&category=Electronics`
 - **Response `200 OK`**:
   ```json
   {
@@ -322,7 +329,11 @@ Lists found items with optional filters (`status`, `category`, `q`).
         "location": "Student Union",
         "dateFound": "2026-11-01T14:45:00.000Z",
         "imageUrl": "https://...",
-        "status": "OPEN",
+        "holdingLocation": "security office",
+        "secretQuestion": "What cartoon sticker is on the back of the case?",
+        "status": "open",
+        "isExpired": false,
+        "expiresAt": "2026-12-01T14:45:00.000Z",
         "claimedByUserId": null,
         "createdAt": "2026-11-01T15:10:00.000Z",
         "updatedAt": "2026-11-01T15:10:00.000Z"
@@ -332,7 +343,7 @@ Lists found items with optional filters (`status`, `category`, `q`).
   ```
 
 #### `GET /api/found/:id`
-Retrieves a single found item by ID.
+Retrieves a single found item by ID. Displays the secret question, but never reveals `secretAnswer`. Finder contact details remain hidden until a claim is verified.
 - **Auth**: Public or Optional
 - **Response `200 OK`**:
   ```json
@@ -346,7 +357,11 @@ Retrieves a single found item by ID.
       "location": "Student Union",
       "dateFound": "2026-11-01T14:45:00.000Z",
       "imageUrl": "https://...",
-      "status": "OPEN",
+      "holdingLocation": "security office",
+      "secretQuestion": "What cartoon sticker is on the back of the case?",
+      "status": "open",
+      "isExpired": false,
+      "expiresAt": "2026-12-01T14:45:00.000Z",
       "claimedByUserId": null,
       "createdAt": "2026-11-01T15:10:00.000Z",
       "updatedAt": "2026-11-01T15:10:00.000Z"
@@ -355,34 +370,45 @@ Retrieves a single found item by ID.
   ```
 
 #### `POST /api/found/:id/claim`
-Submits a claim request for a found item with proof of ownership.
+Submits an answer to the finder's secret question to verify ownership. If the answer matches, marks item status as `reunited` and reveals the finder's contact information and holding location.
 - **Auth**: Required
 - **Request Body**:
   ```json
   {
-    "note": "Serial number is ABCD-1234, has a scratch on the back right hinge.",
-    "proofImageUrl": "https://cdn.campusloop.internal/uploads/proof.jpg"
+    "answer": "Totoro",
+    "note": "Left it after CS101 class"
   }
   ```
 - **Response `200 OK`**:
   ```json
   {
     "data": {
-      "id": "found_101",
-      "status": "CLAIMED",
-      "claimedByUserId": "usr_123",
-      "claimNote": "Serial number is ABCD-1234..."
+      "success": true,
+      "message": "Claim verified! You answered the secret question correctly.",
+      "finderContact": {
+        "name": "Sam Chen",
+        "email": "finder@campus.edu",
+        "phone": "+15550003333",
+        "holdingLocation": "security office"
+      },
+      "item": {
+        "id": "found_101",
+        "status": "reunited",
+        "claimedByUserId": "usr_123",
+        "claimNote": "Left it after CS101 class",
+        "updatedAt": "2026-11-01T15:20:00.000Z"
+      }
     }
   }
   ```
 
 #### `PATCH /api/found/:id/status`
-Updates status of a found item (`OPEN`, `CLAIMED`, `RESOLVED`). Only the poster or admin can update.
+Updates status of a found item (`open`, `reunited`). Only the finder or admin can update.
 - **Auth**: Required
 - **Request Body**:
   ```json
   {
-    "status": "RESOLVED"
+    "status": "reunited"
   }
   ```
 - **Response `200 OK`**:
@@ -390,7 +416,7 @@ Updates status of a found item (`OPEN`, `CLAIMED`, `RESOLVED`). Only the poster 
   {
     "data": {
       "id": "found_101",
-      "status": "RESOLVED",
+      "status": "reunited",
       "updatedAt": "2026-11-01T16:00:00.000Z"
     }
   }

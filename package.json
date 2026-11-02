@@ -12,6 +12,8 @@
     "build": "npm run build --workspaces --if-present",
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
+    "test:server": "npm run test --workspace=server",
+    "test": "npm run test --workspace=server",
     "prisma:generate": "npm run prisma:generate --workspace=server",
     "prisma:migrate": "npm run prisma:migrate --workspace=server",
     "prisma:seed": "npm run prisma:seed --workspace=server"

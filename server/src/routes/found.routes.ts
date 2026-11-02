@@ -1,0 +1,318 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../config/prisma';
+import { authenticate, optionalAuth } from '../middlewares/auth';
+import { validateBody } from '../middlewares/validate';
+import { AppError, sendSuccess } from '../utils/response';
+
+const router = Router();
+
+// Validation Schemas
+export const createFoundSchema = z.object({
+  title: z.string().min(2, 'Title must be at least 2 characters'),
+  description: z.string().min(5, 'Description must be at least 5 characters'),
+  category: z.string().min(1, 'Category is required'),
+  location: z.string().min(1, 'Location is required'),
+  dateFound: z.string().datetime({ message: 'dateFound must be a valid ISO datetime string' }),
+  imageUrl: z.string().url('Invalid image URL').optional().nullable(),
+  holdingLocation: z.enum(['with finder', 'security office', 'department'], {
+    errorMap: () => ({ message: 'holdingLocation must be: with finder, security office, or department' }),
+  }),
+  secretQuestion: z.string().min(3, 'Secret question must be at least 3 characters'),
+  secretAnswer: z.string().min(1, 'Secret answer is required for ownership verification'),
+});
+
+export const claimFoundSchema = z.object({
+  answer: z.string().min(1, 'Verification answer is required'),
+  note: z.string().optional(),
+});
+
+export const updateFoundStatusSchema = z.object({
+  status: z.enum(['open', 'reunited'], {
+    errorMap: () => ({ message: 'Status must be one of: open, reunited' }),
+  }),
+});
+
+/**
+ * POST /api/found
+ * Report a found item with holding location, secret question & hashed answer
+ */
+router.post(
+  '/',
+  authenticate,
+  validateBody(createFoundSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      const {
+        title,
+        description,
+        category,
+        location,
+        dateFound,
+        imageUrl,
+        holdingLocation,
+        secretQuestion,
+        secretAnswer,
+      } = req.body;
+
+      // Hash secret answer before storing
+      const salt = await bcrypt.genSalt(10);
+      const hashedSecretAnswer = await bcrypt.hash(secretAnswer.trim().toLowerCase(), salt);
+
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+      const foundItem = await prisma.foundItem.create({
+        data: {
+          userId: user.id,
+          title,
+          description,
+          category,
+          location,
+          dateFound: new Date(dateFound),
+          imageUrl: imageUrl || null,
+          holdingLocation,
+          secretQuestion,
+          secretAnswer: hashedSecretAnswer,
+          status: 'open',
+          isExpired: false,
+          expiresAt,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, avatarUrl: true },
+          },
+        },
+      });
+
+      // Omit secretAnswer from response
+      const { secretAnswer: _, ...sanitized } = foundItem;
+
+      sendSuccess(res, sanitized, 201);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/found
+ * List found items with category, status, q filters (secretAnswer omitted)
+ */
+router.get(
+  '/',
+  optionalAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { category, status, q, page = '1', limit = '20' } = req.query as Record<string, string>;
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+      const skip = (pageNum - 1) * limitNum;
+
+      const where: any = {
+        isExpired: false,
+      };
+
+      if (category) {
+        where.category = { equals: category, mode: 'insensitive' };
+      }
+
+      if (status) {
+        where.status = { equals: status, mode: 'insensitive' };
+      } else {
+        where.status = 'open';
+      }
+
+      if (q) {
+        where.OR = [
+          { title: { contains: q, mode: 'insensitive' } },
+          { description: { contains: q, mode: 'insensitive' } },
+          { location: { contains: q, mode: 'insensitive' } },
+        ];
+      }
+
+      const items = await prisma.foundItem.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: { id: true, name: true, avatarUrl: true }, // Keep email/phone hidden
+          },
+        },
+      });
+
+      // Remove secretAnswer
+      const sanitized = items.map(({ secretAnswer, ...rest }) => rest);
+
+      sendSuccess(res, sanitized);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/found/:id
+ * Retrieve a specific found item with secret question (secretAnswer omitted)
+ */
+router.get(
+  '/:id',
+  optionalAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = req.params.id as string;
+      const item = (await prisma.foundItem.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: { id: true, name: true, avatarUrl: true, email: true, phone: true },
+          },
+        },
+      })) as any;
+
+      if (!item) {
+        throw new AppError(404, 'NOT_FOUND', 'Found item not found');
+      }
+
+      // Check if current user is finder, claimed owner, or admin
+      const isPrivileged =
+        req.user &&
+        (req.user.id === item.userId ||
+          req.user.id === item.claimedByUserId ||
+          req.user.role === 'ADMIN');
+
+      const { secretAnswer: _, user, ...sanitized } = item;
+
+      // Mask contact details if not privileged
+      const userDisplay = isPrivileged
+        ? user
+        : { id: user.id, name: user.name, avatarUrl: user.avatarUrl };
+
+      sendSuccess(res, { ...sanitized, user: userDisplay });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * POST /api/found/:id/claim
+ * Verifies secret answer. If correct, marks item as reunited and reveals finder contact info.
+ */
+router.post(
+  '/:id/claim',
+  authenticate,
+  validateBody(claimFoundSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = req.params.id as string;
+      const { answer, note } = req.body;
+      const user = req.user!;
+
+      const item = (await prisma.foundItem.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true },
+          },
+        },
+      })) as any;
+
+      if (!item) {
+        throw new AppError(404, 'NOT_FOUND', 'Found item not found');
+      }
+
+      if (item.status === 'reunited') {
+        throw new AppError(400, 'ALREADY_REUNITED', 'This item has already been claimed and reunited with its owner.');
+      }
+
+      if (item.userId === user.id) {
+        throw new AppError(400, 'CANNOT_CLAIM_OWN_ITEM', 'You cannot submit a claim for an item you reported yourself.');
+      }
+
+      // Check secret answer
+      const isAnswerCorrect = await bcrypt.compare(
+        answer.trim().toLowerCase(),
+        item.secretAnswer
+      );
+
+      if (!isAnswerCorrect) {
+        throw new AppError(
+          400,
+          'CLAIM_FAILED',
+          'Incorrect answer to the secret verification question. Please check and try again.'
+        );
+      }
+
+      // Mark item as reunited and claimed
+      const updatedItem = await prisma.foundItem.update({
+        where: { id },
+        data: {
+          status: 'reunited',
+          claimedByUserId: user.id,
+          claimNote: note || 'Verified via secret answer',
+        },
+      });
+
+      sendSuccess(res, {
+        success: true,
+        message: 'Claim verified! You answered the secret question correctly.',
+        finderContact: {
+          name: item.user.name,
+          email: item.user.email,
+          phone: item.user.phone || 'Not provided',
+          holdingLocation: item.holdingLocation,
+        },
+        item: {
+          id: updatedItem.id,
+          status: updatedItem.status,
+          claimedByUserId: updatedItem.claimedByUserId,
+          claimNote: updatedItem.claimNote,
+          updatedAt: updatedItem.updatedAt,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * PATCH /api/found/:id/status
+ * Update status (open, reunited). Finder or admin only.
+ */
+router.patch(
+  '/:id/status',
+  authenticate,
+  validateBody(updateFoundStatusSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = req.params.id as string;
+      const { status } = req.body;
+      const user = req.user!;
+
+      const item = await prisma.foundItem.findUnique({ where: { id } });
+      if (!item) {
+        throw new AppError(404, 'NOT_FOUND', 'Found item not found');
+      }
+
+      if (item.userId !== user.id && user.role !== 'ADMIN') {
+        throw new AppError(403, 'FORBIDDEN', 'You do not have permission to update this item');
+      }
+
+      const updated = await prisma.foundItem.update({
+        where: { id },
+        data: { status },
+      });
+
+      sendSuccess(res, updated);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+export default router;

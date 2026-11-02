@@ -12,61 +12,6 @@ enum UserRole {
   ADMIN
 }
 
-enum LostStatus {
-  OPEN
-  RESOLVED
-  CLOSED
-}
-
-enum FoundStatus {
-  OPEN
-  CLAIMED
-  RESOLVED
-}
-
-enum RideStatus {
-  OPEN
-  FULL
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum ListingCondition {
-  NEW
-  LIKE_NEW
-  GOOD
-  FAIR
-}
-
-enum ListingStatus {
-  AVAILABLE
-  RESERVED
-  SOLD
-}
-
-enum NotificationType {
-  MATCH
-  CLAIM
-  CHAT
-  RIDE
-  SYSTEM
-}
-
-enum ReportTargetType {
-  USER
-  LOST
-  FOUND
-  LISTING
-  RIDE
-}
-
-enum ReportStatus {
-  PENDING
-  RESOLVED
-  DISMISSED
-}
-
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -79,51 +24,115 @@ model User {
   updatedAt DateTime @updatedAt
 
   lostItems          LostItem[]
-  foundItems         FoundItem[]
-  claimedFoundItems  FoundItem[]       @relation("ClaimedFoundItems")
+  foundItems         FoundItem[]               @relation("FoundReported")
+  claimedFoundItems  FoundItem[]               @relation("ClaimedFoundItems")
   trainTrips         TrainTrip[]
-  createdRides       Ride[]            @relation("CreatedRides")
+  createdRides       Ride[]                    @relation("CreatedRides")
   joinedRides        RidePassenger[]
   listings           Listing[]
   wishlists          Wishlist[]
   sentMessages       Message[]
   notifications      Notification[]
-  filedReports       Report[]          @relation("Reporter")
+  filedReports       Report[]                  @relation("Reporter")
   conversations      ConversationParticipant[]
 }
 
+model OtpToken {
+  id        String   @id @default(uuid())
+  email     String
+  otpHash   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
 model LostItem {
-  id                 String     @id @default(uuid())
-  userId             String
-  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title              String
-  description        String
-  category           String
-  location           String
-  dateLost           DateTime
-  imageUrl           String?
-  status             LostStatus @default(OPEN)
-  matchedFoundItemId String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  category    String
+  location    String
+  dateLost    DateTime
+  imageUrl    String?
+  status      String   @default("open") // "open", "reunited", "closed"
+  isExpired   Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, status])
 }
 
 model FoundItem {
-  id              String      @id @default(uuid())
+  id              String   @id @default(uuid())
   userId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation("FoundReported", fields: [userId], references: [id], onDelete: Cascade)
   title           String
   description     String
   category        String
   location        String
   dateFound       DateTime
   imageUrl        String?
-  status          FoundStatus @default(OPEN)
+  holdingLocation String   @default("with finder") // "with finder", "security office", "department"
+  secretQuestion  String   @default("What is a unique distinguishing feature?")
+  secretAnswer    String   // Hashed answer or normalized hash
+  status          String   @default("open") // "open", "reunited"
   claimedByUserId String?
-  claimedByUser   User?       @relation("ClaimedFoundItems", fields: [claimedByUserId], references: [id])
+  claimedByUser   User?    @relation("ClaimedFoundItems", fields: [claimedByUserId], references: [id])
   claimNote       String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  isExpired       Boolean  @default(false)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category, status])
+}
+
+model Listing {
+  id          String     @id @default(uuid())
+  sellerId    String
+  seller      User       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  price       Float
+  category    String
+  condition   String     @default("used") // "new", "like new", "used"
+  imageUrls   String[]
+  status      String     @default("available") // "available", "reserved", "sold"
+  isExpired   Boolean    @default(false)
+  expiresAt   DateTime
+  wishlists   Wishlist[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([category, status])
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType String   // "USER", "LOST", "FOUND", "LISTING", "RIDE"
+  targetId   String
+  reason     String
+  details    String?
+  status     String   @default("pending") // "pending", "resolved", "dismissed"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model TrainTrip {
@@ -153,7 +162,7 @@ model Ride {
   totalSeats     Int
   availableSeats Int
   estimatedFare  Float
-  status         RideStatus      @default(OPEN)
+  status         String          @default("OPEN") // "OPEN", "FULL", "IN_PROGRESS", "COMPLETED", "CANCELLED"
   notes          String?
   passengers     RidePassenger[]
   createdAt      DateTime        @default(now())
@@ -169,33 +178,6 @@ model RidePassenger {
   joinedAt DateTime @default(now())
 
   @@unique([rideId, userId])
-}
-
-model Listing {
-  id          String           @id @default(uuid())
-  sellerId    String
-  seller      User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  title       String
-  description String
-  price       Float
-  category    String
-  condition   ListingCondition @default(GOOD)
-  imageUrls   String[]
-  status      ListingStatus    @default(AVAILABLE)
-  wishlists   Wishlist[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-}
-
-model Wishlist {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@unique([userId, listingId])
 }
 
 model Conversation {
@@ -228,27 +210,13 @@ model Message {
 }
 
 model Notification {
-  id        String           @id @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  type      NotificationType
+  type      String   // "MATCH", "CLAIM", "CHAT", "RIDE", "SYSTEM"
   link      String?
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
-
-model Report {
-  id          String           @id @default(uuid())
-  reporterId  String
-  reporter    User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetType  ReportTargetType
-  targetId    String
-  reason      String
-  details     String?
-  status      ReportStatus     @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-}
-

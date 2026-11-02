@@ -10,6 +10,7 @@
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    "isolatedModules": true,
     "paths": {
       "@/*": ["./src/*"],
       "@docs/*": ["../docs/*"]
