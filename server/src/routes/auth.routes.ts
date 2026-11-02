@@ -1,94 +1,190 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { prisma } from '../prisma';
-import { authenticateUser, generateToken, AuthRequest } from '../middleware/auth';
-import { HttpError } from '../errors';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../config/prisma';
+import { env } from '../config/env';
+import { sendOtpEmail } from '../services/email.service';
+import { AppError, sendSuccess } from '../utils/response';
+import { authenticate } from '../middlewares/auth';
+import { validateBody } from '../middlewares/validate';
+import { authLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
-// In-memory OTP storage for demonstration
-const otpStore: Map<string, { otp: string; expires: number }> = new Map();
-
-// POST /api/auth/request-otp
-router.post('/request-otp', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      throw new HttpError(400, 'BAD_REQUEST', 'University email is required');
-    }
-
-    const normalized = email.toLowerCase().trim();
-    if (!normalized.endsWith('.edu') && !normalized.endsWith('.ac.in') && !normalized.includes('campus')) {
-      throw new HttpError(400, 'BAD_REQUEST', 'Only valid university email addresses (.edu) are allowed');
-    }
-
-    // Default demo OTP 123456
-    const otp = '123456';
-    otpStore.set(normalized, {
-      otp,
-      expires: Date.now() + 10 * 60 * 1000, // 10 minutes
-    });
-
-    res.json({
-      data: {
-        message: 'OTP sent successfully to your university email.',
-        email: normalized,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
+// Validation Schemas
+export const requestOtpSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
 });
 
-// POST /api/auth/verify-otp
-router.post('/verify-otp', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      throw new HttpError(400, 'BAD_REQUEST', 'Email and OTP passcode are required');
-    }
+export const verifyOtpSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be exactly 6 digits'),
+});
 
-    const normalized = email.toLowerCase().trim();
-    const stored = otpStore.get(normalized);
+/**
+ * POST /api/auth/request-otp
+ * Validates domain, generates 6-digit OTP, hashes it, stores with 10-min expiry, sends email
+ */
+router.post(
+  '/request-otp',
+  authLimiter,
+  validateBody(requestOtpSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const email = req.body.email.toLowerCase().trim();
 
-    // Accept demo OTP or stored OTP
-    if (otp !== '123456' && (!stored || stored.otp !== otp || stored.expires < Date.now())) {
-      throw new HttpError(400, 'BAD_REQUEST', 'Invalid or expired OTP passcode');
-    }
+      // Check email domain
+      const emailDomain = email.split('@')[1];
+      const allowedDomain = env.ALLOWED_EMAIL_DOMAIN.toLowerCase();
+      const isAllowed =
+        emailDomain === allowedDomain || emailDomain?.endsWith(`.${allowedDomain}`);
 
-    // Clean up used OTP
-    otpStore.delete(normalized);
+      if (!isAllowed) {
+        throw new AppError(
+          400,
+          'INVALID_EMAIL_DOMAIN',
+          `Only university email addresses ending with @${env.ALLOWED_EMAIL_DOMAIN} are permitted.`
+        );
+      }
 
-    // Upsert user profile
-    let user = await prisma.user.findUnique({ where: { email: normalized } });
-    if (!user) {
-      const defaultName = normalized
-        .split('@')[0]
-        .replace(/[._]/g, ' ')
-        .replace(/\b\w/g, (c: string) => c.toUpperCase());
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      user = await prisma.user.create({
+      // Hash OTP using bcrypt
+      const salt = await bcrypt.genSalt(10);
+      const otpHash = await bcrypt.hash(otp, salt);
+
+      // Clean up previous tokens for this email
+      await prisma.otpToken.deleteMany({ where: { email } });
+
+      // Save new token with 10-minute expiry
+      await prisma.otpToken.create({
         data: {
-          email: normalized,
-          name: defaultName,
-          role: 'USER',
-          department: 'General Studies',
-          year: '1st Year',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+          email,
+          otpHash,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
         },
       });
+
+      // Send via Nodemailer (logs to console in dev mode)
+      await sendOtpEmail(email, otp);
+
+      sendSuccess(res, {
+        message: 'OTP sent successfully',
+        email,
+      });
+    } catch (err) {
+      next(err);
     }
-
-    const token = generateToken(user);
-
-    res.json({
-      data: {
-        token,
-        user,
-      },
-    });
-  } catch (err) {
-    next(err);
   }
-});
+);
+
+/**
+ * POST /api/auth/verify-otp
+ * Validates OTP, creates user on first login, returns JWT
+ */
+router.post(
+  '/verify-otp',
+  authLimiter,
+  validateBody(verifyOtpSchema),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const email = req.body.email.toLowerCase().trim();
+      const otp = req.body.otp.trim();
+
+      // Retrieve latest active token record
+      const tokenRecord = await prisma.otpToken.findFirst({
+        where: {
+          email,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      let isOtpValid = false;
+
+      if (tokenRecord) {
+        isOtpValid = await bcrypt.compare(otp, tokenRecord.otpHash);
+      }
+
+      // Dev & test fallback OTP 123456
+      if (!isOtpValid && env.NODE_ENV !== 'production' && otp === '123456') {
+        const emailDomain = email.split('@')[1];
+        if (
+          emailDomain === env.ALLOWED_EMAIL_DOMAIN ||
+          emailDomain?.endsWith(`.${env.ALLOWED_EMAIL_DOMAIN}`)
+        ) {
+          isOtpValid = true;
+        }
+      }
+
+      if (!isOtpValid) {
+        throw new AppError(400, 'INVALID_OTP', 'Invalid or expired verification code');
+      }
+
+      // Remove consumed tokens
+      await prisma.otpToken.deleteMany({ where: { email } });
+
+      // Find or create user
+      let user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
+        const formattedName = namePart
+          .split(' ')
+          .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ') || 'Campus Student';
+
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: formattedName,
+            role: email.startsWith('admin@') ? 'ADMIN' : 'USER',
+          },
+        });
+      }
+
+      if (user.isBanned) {
+        throw new AppError(403, 'FORBIDDEN', 'Your account has been suspended by an administrator');
+      }
+
+      // Sign JWT
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        env.JWT_SECRET,
+        { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions
+      );
+
+      sendSuccess(res, {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phone: user.phone,
+          avatarUrl: user.avatarUrl,
+          role: user.role,
+          isBanned: user.isBanned,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/me
+ * Retrieves profile of currently authenticated user
+ */
+router.get(
+  '/me',
+  authenticate,
+  (req: Request, res: Response): void => {
+    sendSuccess(res, req.user);
+  }
+);
 
 export default router;

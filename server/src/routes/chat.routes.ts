@@ -161,7 +161,7 @@ router.get('/:id/messages', authenticateUser, async (req: AuthRequest, res: Resp
     const member = await prisma.conversationMember.findUnique({
       where: {
         conversationId_userId: {
-          conversationId: id,
+          conversationId: String(id),
           userId: user.id,
         },
       },
@@ -225,6 +225,7 @@ router.post('/:id/messages', authenticateUser, async (req: AuthRequest, res: Res
   try {
     const { id: conversationId } = req.params;
     const user = req.user!;
+    const conversationIdStr = String(conversationId);
     const { content } = req.body;
 
     if (!content || !content.trim()) {
@@ -235,7 +236,7 @@ router.post('/:id/messages', authenticateUser, async (req: AuthRequest, res: Res
     const member = await prisma.conversationMember.findUnique({
       where: {
         conversationId_userId: {
-          conversationId,
+          conversationId: conversationIdStr,
           userId: user.id,
         },
       },
@@ -248,7 +249,7 @@ router.post('/:id/messages', authenticateUser, async (req: AuthRequest, res: Res
     // Persist message in database
     const message = await prisma.message.create({
       data: {
-        conversationId,
+        conversationId: conversationIdStr,
         senderId: user.id,
         content: content.trim(),
       },
@@ -263,12 +264,12 @@ router.post('/:id/messages', authenticateUser, async (req: AuthRequest, res: Res
           },
         },
       },
-    });
+    }) as any;
 
     const safeSender = {
       id: user.id,
       name: user.name,
-      avatarUrl: (message.sender as any)?.avatarUrl || null,
+      avatarUrl: message.sender?.avatarUrl || null,
       department: user.department || null,
       year: user.year || null,
     };
@@ -285,19 +286,19 @@ router.post('/:id/messages', authenticateUser, async (req: AuthRequest, res: Res
     // Emit Socket.io message:new event to the conversation room
     const io = getSocketIO();
     if (io) {
-      io.to(`conversation:${conversationId}`).emit('message:new', payload);
+      io.to(`conversation:${conversationIdStr}`).emit('message:new', payload);
     }
 
     // Send notifications to all other members in the conversation
     try {
       const allMembers = await prisma.conversationMember.findMany({
-        where: { conversationId },
+        where: { conversationId: conversationIdStr },
       });
       const recipientIds = allMembers.map((m: any) => m.userId);
       await notificationService.notifyNewMessage(
         recipientIds,
         { id: user.id, name: user.name },
-        String(conversationId),
+        conversationIdStr,
         message.content
       );
     } catch (notifErr) {

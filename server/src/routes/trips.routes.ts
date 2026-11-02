@@ -102,7 +102,7 @@ router.get('/:id/buddies', authenticateUser, async (req: AuthRequest, res: Respo
     const user = req.user!;
 
     const currentTrip = await prisma.trainTrip.findUnique({
-      where: { id },
+      where: { id: String(id) },
     });
 
     if (!currentTrip) {
@@ -179,7 +179,7 @@ router.delete('/:id', authenticateUser, async (req: AuthRequest, res: Response, 
     const { id } = req.params;
     const user = req.user!;
 
-    const trip = await prisma.trainTrip.findUnique({ where: { id } });
+    const trip = await prisma.trainTrip.findUnique({ where: { id: String(id) } });
     if (!trip) {
       throw new HttpError(404, 'NOT_FOUND', 'Train trip not found');
     }
@@ -188,7 +188,7 @@ router.delete('/:id', authenticateUser, async (req: AuthRequest, res: Response, 
       throw new HttpError(403, 'FORBIDDEN', 'You do not have permission to delete this trip');
     }
 
-    await prisma.trainTrip.delete({ where: { id } });
+    await prisma.trainTrip.delete({ where: { id: String(id) } });
 
     res.json({
       data: {

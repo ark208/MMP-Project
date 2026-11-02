@@ -1,9 +1,8 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 
 let ioInstance: SocketIOServer | null = null;
-
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-replace-in-production';
 
 export function setSocketIO(io: SocketIOServer) {
   ioInstance = io;
@@ -29,7 +28,7 @@ export function configureSocketIO(io: SocketIOServer) {
         return next(new Error('Authentication error: Missing token'));
       }
 
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, env.JWT_SECRET) as any;
       socket.data.user = decoded;
       next();
     } catch (err) {
@@ -42,7 +41,7 @@ export function configureSocketIO(io: SocketIOServer) {
     if (user?.id) {
       // Auto-join personal room for direct notification alerts
       socket.join(`user:${user.id}`);
-      console.log(`[Socket] Authenticated user ${user.name} (${user.id}) joined user:${user.id}`);
+      console.log(`[Socket] Authenticated user ${user.name || user.id} joined user:${user.id}`);
     }
 
     // Join / Leave Conversation Room

@@ -1,23 +1,24 @@
+// Thin bridge: exposes the same API surface the Phase-2 routes expect
+// (authenticateUser, AuthRequest, generateToken, requireRole, optionalAuth)
+// while delegating JWT verification to the same env.JWT_SECRET the remote uses.
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../prisma';
-import { HttpError } from '../errors';
+import { env } from '../config/env';
+import { prisma } from '../config/prisma';
+import { AppError } from '../utils/response';
+import { User } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-replace-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-
-export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  department?: string | null;
-  year?: string | null;
-  isBanned?: boolean;
+// Extend Express Request so req.user is the full Prisma User (matching remote's declaration)
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
 }
 
 export interface AuthRequest extends Request {
-  user?: AuthenticatedUser;
+  user?: User;
 }
 
 export function generateToken(user: { id: string; email: string; name: string; role?: string }): string {
@@ -28,72 +29,53 @@ export function generateToken(user: { id: string; email: string; name: string; r
       name: user.name,
       role: user.role || 'USER',
     },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN as any }
+    env.JWT_SECRET,
+    { expiresIn: env.JWT_EXPIRES_IN as any }
   );
 }
 
-export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    next(new AppError(401, 'UNAUTHORIZED', 'Authorization header missing or invalid'));
+    return;
+  }
+
+  const token = authHeader.split(' ')[1];
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpError(401, 'UNAUTHORIZED', 'Authorization header missing or invalid');
-    }
-
-    const token = authHeader.split(' ')[1];
-    let payload: any;
-    try {
-      payload = jwt.verify(token, JWT_SECRET);
-    } catch {
-      throw new HttpError(401, 'UNAUTHORIZED', 'Invalid or expired JWT token');
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.id },
-    });
+    const payload = jwt.verify(token, env.JWT_SECRET) as any;
+    const user = await prisma.user.findUnique({ where: { id: payload.id } });
 
     if (!user) {
-      throw new HttpError(401, 'UNAUTHORIZED', 'User associated with token no longer exists');
+      next(new AppError(401, 'UNAUTHORIZED', 'User associated with token no longer exists'));
+      return;
     }
 
     if (user.isBanned) {
-      throw new HttpError(403, 'FORBIDDEN', 'Your account has been banned from CampusLoop');
+      next(new AppError(403, 'FORBIDDEN', 'Your account has been banned from CampusLoop'));
+      return;
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      department: user.department,
-      year: user.year,
-      isBanned: user.isBanned,
-    };
-
+    req.user = user;
     next();
   } catch (err) {
-    next(err);
+    if (err instanceof jwt.TokenExpiredError) {
+      next(new AppError(401, 'UNAUTHORIZED', 'Token has expired. Please log in again.'));
+      return;
+    }
+    next(new AppError(401, 'UNAUTHORIZED', 'Invalid or expired JWT token'));
   }
 }
 
-export function requireRole(role: 'ADMIN' | 'USER') {
-  return (req: AuthRequest, _res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new HttpError(401, 'UNAUTHORIZED', 'Authentication required'));
-    }
-    if (req.user.role !== role && req.user.role !== 'ADMIN') {
-      return next(new HttpError(403, 'FORBIDDEN', 'Insufficient permissions'));
-    }
-    next();
-  };
-}
+// Alias so callers that import `authenticate` (remote routes) also work
+export { authenticateUser as authenticate };
 
-export async function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction) {
+export async function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const payload: any = jwt.verify(token, JWT_SECRET);
+      const payload: any = jwt.verify(token, env.JWT_SECRET);
       const user = await prisma.user.findUnique({ where: { id: payload.id } });
       if (user && !user.isBanned) {
         req.user = user;
@@ -103,4 +85,18 @@ export async function optionalAuth(req: AuthRequest, _res: Response, next: NextF
     // Ignore invalid optional token
   }
   next();
+}
+
+export function requireRole(role: 'ADMIN' | 'USER') {
+  return (req: AuthRequest, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      next(new AppError(401, 'UNAUTHORIZED', 'Authentication required'));
+      return;
+    }
+    if (req.user.role !== role && req.user.role !== 'ADMIN') {
+      next(new AppError(403, 'FORBIDDEN', 'Insufficient permissions'));
+      return;
+    }
+    next();
+  };
 }

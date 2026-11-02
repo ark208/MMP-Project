@@ -29,7 +29,7 @@ router.patch('/:id/read', authenticateUser, async (req: AuthRequest, res: Respon
     const user = req.user!;
 
     const notif = await prisma.notification.update({
-      where: { id },
+      where: { id: String(id) },
       data: { isRead: true },
     });
 

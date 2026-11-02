@@ -145,7 +145,7 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response, next: N
   try {
     const { id } = req.params;
     const ride = await prisma.ride.findUnique({
-      where: { id },
+      where: { id: String(id) },
       include: {
         creator: {
           select: {
@@ -418,7 +418,7 @@ router.patch('/:id/status', authenticateUser, async (req: AuthRequest, res: Resp
       );
     }
 
-    const ride = await prisma.ride.findUnique({ where: { id } });
+    const ride = await prisma.ride.findUnique({ where: { id: String(id) } });
     if (!ride) {
       throw new HttpError(404, 'NOT_FOUND', 'Ride not found');
     }
@@ -428,7 +428,7 @@ router.patch('/:id/status', authenticateUser, async (req: AuthRequest, res: Resp
     }
 
     const updated = await prisma.ride.update({
-      where: { id },
+      where: { id: String(id) },
       data: { status },
     });
 
@@ -460,7 +460,7 @@ router.get('/:id/fare-split', authenticateUser, async (req: AuthRequest, res: Re
     const { totalFare: overrideFare } = req.query;
 
     const ride = await prisma.ride.findUnique({
-      where: { id },
+      where: { id: String(id) },
       include: {
         members: {
           include: {
@@ -473,7 +473,7 @@ router.get('/:id/fare-split', authenticateUser, async (req: AuthRequest, res: Re
           },
         },
       },
-    });
+    }) as any;
 
     if (!ride) {
       throw new HttpError(404, 'NOT_FOUND', 'Ride not found');

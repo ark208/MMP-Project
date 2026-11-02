@@ -62,8 +62,9 @@ export interface AuthTokens {
 // Module 1: Lost & Found
 // -------------------------------------------------------------------------
 
-export type ItemStatus = 'OPEN' | 'RESOLVED' | 'CLOSED';
-export type FoundStatus = 'OPEN' | 'CLAIMED' | 'RESOLVED';
+export type ItemStatus = 'open' | 'reunited' | 'closed' | 'OPEN' | 'RESOLVED' | 'CLOSED';
+export type FoundStatus = 'open' | 'reunited' | 'OPEN' | 'CLAIMED' | 'RESOLVED';
+export type HoldingLocation = 'with finder' | 'security office' | 'department';
 
 export interface LostItem {
   id: string;
@@ -76,6 +77,8 @@ export interface LostItem {
   dateLost: string;
   imageUrl?: string | null;
   status: ItemStatus;
+  isExpired?: boolean;
+  expiresAt?: string;
   matchedFoundItemId?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -84,24 +87,41 @@ export interface LostItem {
 export interface FoundItem {
   id: string;
   userId: string;
-  user?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>;
+  user?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl' | 'phone'>;
   title: string;
   description: string;
   category: string;
   location: string;
   dateFound: string;
   imageUrl?: string | null;
+  holdingLocation: HoldingLocation;
+  secretQuestion: string;
+  secretAnswer?: string; // Hashed on server; never sent in public API responses
   status: FoundStatus;
   claimedByUserId?: string | null;
   claimedByUser?: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'> | null;
   claimNote?: string | null;
+  isExpired?: boolean;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ClaimRequest {
-  note: string;
-  proofImageUrl?: string;
+  answer: string;
+  note?: string;
+}
+
+export interface ClaimVerificationResponse {
+  success: boolean;
+  message: string;
+  finderContact: {
+    name: string;
+    email: string;
+    phone: string;
+    holdingLocation: HoldingLocation;
+  };
+  item: Partial<FoundItem>;
 }
 
 // -------------------------------------------------------------------------
@@ -180,8 +200,8 @@ export interface FareSplitInfo {
 // Module 4: Campus Marketplace
 // -------------------------------------------------------------------------
 
-export type ListingCondition = 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
-export type ListingStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD';
+export type ListingCondition = 'new' | 'like new' | 'used' | 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
+export type ListingStatus = 'available' | 'reserved' | 'sold' | 'AVAILABLE' | 'RESERVED' | 'SOLD';
 
 export interface Listing {
   id: string;
@@ -195,6 +215,8 @@ export interface Listing {
   imageUrls: string[];
   status: ListingStatus;
   isWishlisted?: boolean;
+  isExpired?: boolean;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }

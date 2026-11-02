@@ -1,82 +1,100 @@
-import express, { Request, Response, NextFunction } from 'express';
+import 'dotenv/config';
+import express, { Request, Response } from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import path from 'path';
+import helmet from 'helmet';
 
+// Shared config / middleware / services (remote)
+import { env } from './config/env';
+import { globalLimiter } from './middlewares/rateLimiter';
+import { errorHandler } from './middlewares/errorHandler';
+import { startExpiryCron } from './services/cron.service';
+import { sendSuccess } from './utils/response';
+
+// Socket + auth (yours)
 import { configureSocketIO } from './socket';
 import { authenticateUser, AuthRequest } from './middleware/auth';
-import { HttpError } from './errors';
+
+// Route imports
 import authRoutes from './routes/auth.routes';
 import tripsRoutes from './routes/trips.routes';
 import ridesRoutes from './routes/rides.routes';
 import chatRoutes from './routes/chat.routes';
 import notificationsRoutes from './routes/notifications.routes';
-
-dotenv.config();
+import uploadRoutes from './routes/upload.routes';
+import lostRoutes from './routes/lost.routes';
+import foundRoutes from './routes/found.routes';
+import listingRoutes from './routes/listing.routes';
+import wishlistRoutes from './routes/wishlist.routes';
+import reportRoutes from './routes/report.routes';
 
 const app = express();
 const server = http.createServer(app);
 
-const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
-
 // Socket.io initialization with CORS
 const io = new SocketIOServer(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: env.CLIENT_URL,
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
-// Configure Socket.io with JWT Handshake Auth and Event Handlers
+// Socket.io with JWT handshake auth and event handlers
 configureSocketIO(io);
 
-// Middleware
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+// Security & global middleware
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow serving uploaded images across origins
+  })
+);
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+app.use(globalLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health & Root check conforming to response envelope
+// Serve local uploads
+app.use('/uploads', express.static(env.UPLOAD_DIR));
+
+// Health checks
 app.get('/', (_req: Request, res: Response) => {
-  res.json({
-    data: {
-      name: 'CampusLoop API',
-      status: 'healthy',
-      version: '2.0.0',
-      timestamp: new Date().toISOString(),
-    },
+  sendSuccess(res, {
+    name: 'CampusLoop API',
+    status: 'healthy',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
   });
 });
 
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({
-    data: {
-      status: 'ok',
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-    },
+  sendSuccess(res, {
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
   });
 });
 
-// GET /api/me - Authenticated user profile
+// GET /api/me - authenticated user profile
 app.get('/api/me', authenticateUser, (req: AuthRequest, res: Response) => {
-  res.json({
-    data: req.user,
-  });
+  res.json({ data: req.user });
 });
 
-// Mount Module Routes
+// Mount module routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripsRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/conversations', chatRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/lost', lostRoutes);
+app.use('/api/found', foundRoutes);
+app.use('/api/listings', listingRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api', reportRoutes); // keep last: handles /api/reports and /api/admin/*
 
-// 404 handler conforming to error response envelope
+// 404 handler
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
     error: {
@@ -87,32 +105,20 @@ app.use((_req: Request, res: Response) => {
   });
 });
 
-// Global error handler conforming to error response envelope
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const statusCode = err.statusCode || 500;
-  const code = err.code || 'INTERNAL_SERVER_ERROR';
-  const message = err.message || 'Internal server error occurred';
-  const details = err.details || null;
+// Centralized error handling
+app.use(errorHandler);
 
-  if (statusCode >= 500 && process.env.NODE_ENV !== 'test') {
-    console.error('[ServerError]', err);
-  }
+// Start expiry cron job
+if (env.NODE_ENV !== 'test') {
+  startExpiryCron();
+}
 
-  res.status(statusCode).json({
-    error: {
-      code,
-      message,
-      details,
-    },
-  });
-});
-
-// Export io and server for application modules & tests
+// Export for tests and socket modules
 export { app, server, io };
 
-// Start listening if run directly
-if (process.env.NODE_ENV !== 'test' && require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`🚀 CampusLoop Server running on http://localhost:${PORT}`);
+// Start listening
+if (env.NODE_ENV !== 'test') {
+  server.listen(env.PORT, () => {
+    console.log(`🚀 CampusLoop Server running on http://localhost:${env.PORT}`);
   });
 }

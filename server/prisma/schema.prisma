@@ -7,21 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 enum UserRole {
   USER
   ADMIN
-}
-
-enum LostStatus {
-  OPEN
-  RESOLVED
-  CLOSED
-}
-
-enum FoundStatus {
-  OPEN
-  CLAIMED
-  RESOLVED
 }
 
 enum RideStatus {
@@ -32,19 +22,6 @@ enum RideStatus {
   CANCELLED
 }
 
-enum ListingCondition {
-  NEW
-  LIKE_NEW
-  GOOD
-  FAIR
-}
-
-enum ListingStatus {
-  AVAILABLE
-  RESERVED
-  SOLD
-}
-
 enum NotificationType {
   MATCH
   CLAIM
@@ -53,19 +30,7 @@ enum NotificationType {
   SYSTEM
 }
 
-enum ReportTargetType {
-  USER
-  LOST
-  FOUND
-  LISTING
-  RIDE
-}
-
-enum ReportStatus {
-  PENDING
-  RESOLVED
-  DISMISSED
-}
+// ─── User ────────────────────────────────────────────────────────────────────
 
 model User {
   id         String   @id @default(uuid())
@@ -81,52 +46,80 @@ model User {
   updatedAt  DateTime @updatedAt
 
   lostItems               LostItem[]
-  foundItems              FoundItem[]
-  claimedFoundItems       FoundItem[]          @relation("ClaimedFoundItems")
+  foundItems              FoundItem[]           @relation("FoundReported")
+  claimedFoundItems       FoundItem[]           @relation("ClaimedFoundItems")
   trainTrips              TrainTrip[]
-  createdRides            Ride[]               @relation("CreatedRides")
+  createdRides            Ride[]                @relation("CreatedRides")
   rideMemberships         RideMember[]
   listings                Listing[]
   wishlists               Wishlist[]
   sentMessages            Message[]
   notifications           Notification[]
-  filedReports            Report[]             @relation("Reporter")
+  filedReports            Report[]              @relation("Reporter")
   conversationMemberships ConversationMember[]
 }
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model OtpToken {
+  id        String   @id @default(uuid())
+  email     String
+  otpHash   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// ─── Lost & Found ─────────────────────────────────────────────────────────────
+
 model LostItem {
-  id                 String     @id @default(uuid())
+  id                 String   @id @default(uuid())
   userId             String
-  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title              String
   description        String
   category           String
   location           String
   dateLost           DateTime
   imageUrl           String?
-  status             LostStatus @default(OPEN)
+  status             String   @default("open") // "open", "reunited", "closed"
   matchedFoundItemId String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  isExpired          Boolean  @default(false)
+  expiresAt          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([category, status])
 }
 
 model FoundItem {
-  id              String      @id @default(uuid())
+  id              String   @id @default(uuid())
   userId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation("FoundReported", fields: [userId], references: [id], onDelete: Cascade)
   title           String
   description     String
   category        String
   location        String
   dateFound       DateTime
   imageUrl        String?
-  status          FoundStatus @default(OPEN)
+  holdingLocation String   @default("with finder") // "with finder", "security office", "department"
+  secretQuestion  String   @default("What is a unique distinguishing feature?")
+  secretAnswer    String   // bcrypt-hashed answer
+  status          String   @default("open") // "open", "reunited"
   claimedByUserId String?
-  claimedByUser   User?       @relation("ClaimedFoundItems", fields: [claimedByUserId], references: [id])
+  claimedByUser   User?    @relation("ClaimedFoundItems", fields: [claimedByUserId], references: [id])
   claimNote       String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  isExpired       Boolean  @default(false)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category, status])
 }
+
+// ─── Train Buddy Radar ────────────────────────────────────────────────────────
+// PNR and seat number must NOT be stored.
 
 model TrainTrip {
   id            String   @id @default(uuid())
@@ -142,22 +135,24 @@ model TrainTrip {
   updatedAt     DateTime @updatedAt
 }
 
+// ─── Ride Sharing ─────────────────────────────────────────────────────────────
+
 model Ride {
-  id             String      @id @default(uuid())
+  id             String        @id @default(uuid())
   creatorId      String
-  creator        User        @relation("CreatedRides", fields: [creatorId], references: [id], onDelete: Cascade)
+  creator        User          @relation("CreatedRides", fields: [creatorId], references: [id], onDelete: Cascade)
   origin         String
   destination    String
   departureTime  DateTime
   totalSeats     Int
   availableSeats Int
   estimatedFare  Float
-  status         RideStatus  @default(OPEN)
+  status         RideStatus    @default(OPEN)
   notes          String?
   members        RideMember[]
   conversation   Conversation?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model RideMember {
@@ -171,20 +166,26 @@ model RideMember {
   @@unique([rideId, userId])
 }
 
+// ─── Marketplace ──────────────────────────────────────────────────────────────
+
 model Listing {
-  id          String           @id @default(uuid())
+  id          String     @id @default(uuid())
   sellerId    String
-  seller      User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  seller      User       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   title       String
   description String
   price       Float
   category    String
-  condition   ListingCondition @default(GOOD)
+  condition   String     @default("used") // "new", "like new", "used"
   imageUrls   String[]
-  status      ListingStatus    @default(AVAILABLE)
+  status      String     @default("available") // "available", "reserved", "sold"
+  isExpired   Boolean    @default(false)
+  expiresAt   DateTime
   wishlists   Wishlist[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([category, status])
 }
 
 model Wishlist {
@@ -197,6 +198,8 @@ model Wishlist {
 
   @@unique([userId, listingId])
 }
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
 
 model Conversation {
   id        String               @id @default(uuid())
@@ -231,6 +234,8 @@ model Message {
   createdAt      DateTime     @default(now())
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
 model Notification {
   id        String           @id @default(uuid())
   userId    String
@@ -243,15 +248,17 @@ model Notification {
   createdAt DateTime         @default(now())
 }
 
+// ─── Reports / Moderation ─────────────────────────────────────────────────────
+
 model Report {
-  id         String           @id @default(uuid())
+  id         String   @id @default(uuid())
   reporterId String
-  reporter   User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetType ReportTargetType
+  reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType String   // "LISTING", "LOST_ITEM", "FOUND_ITEM", "USER"
   targetId   String
   reason     String
   details    String?
-  status     ReportStatus     @default(PENDING)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  status     String   @default("pending") // "pending", "reviewed", "dismissed"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
