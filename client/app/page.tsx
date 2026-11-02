@@ -136,6 +136,49 @@ export default function Home() {
         </Link>
       </section>
 
+      {/* Phase 2 Transit Highlights: Train Buddy & Ride Splitting */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link
+          href="/trips"
+          className="p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-200 dark:border-teal-900/60 hover:border-teal-400 dark:hover:border-teal-700 transition-all group flex items-start justify-between gap-4"
+        >
+          <div className="space-y-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300">
+              Train Buddy Radar
+            </span>
+            <h3 className="font-extrabold text-base text-neutral-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+              Find Batchmates on Your Train
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              Match by train number and date. Strictly zero PNR storage. Connect with peers heading back home.
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+            🚆
+          </div>
+        </Link>
+
+        <Link
+          href="/rides"
+          className="p-5 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200 dark:border-indigo-900/60 hover:border-indigo-400 dark:hover:border-indigo-700 transition-all group flex items-start justify-between gap-4"
+        >
+          <div className="space-y-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
+              Campus Ride Splitting
+            </span>
+            <h3 className="font-extrabold text-base text-neutral-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              Cab Sharing & Live Fare Split
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              Preset pickup points (Main Gate, Hostels, Library). Real-time equal split calculation.
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+            🚗
+          </div>
+        </Link>
+      </section>
+
       {/* ============================================================== */}
       {/* 1. LATEST LOST ITEMS FEED */}
       {/* ============================================================== */}

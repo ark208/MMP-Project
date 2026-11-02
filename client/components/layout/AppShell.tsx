@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Search,
@@ -19,20 +19,38 @@ import {
   LogOut,
   ChevronRight,
   X,
+  Train,
+  Car,
+  MessageCircle,
+  Bell,
+  CheckCheck,
+  ArrowRight
 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
+import { notificationsApi } from '@/lib/api';
+import { getSocket, isMockMode } from '@/lib/socket';
+import type { Notification } from '@docs/types';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Navigation Items (Phase 1 + Phase 2)
   const navItems = [
     { label: 'Home', href: '/', icon: Home },
     { label: 'Lost & Found', href: '/lost-found', icon: Search },
     { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
+    { label: 'Train Buddy', href: '/trips', icon: Train },
+    { label: 'Rides', href: '/rides', icon: Car },
+    { label: 'Chat', href: '/chat', icon: MessageCircle },
     { label: 'Wishlist', href: '/marketplace/wishlist', icon: Heart },
     { label: 'Profile', href: '/profile', icon: User },
   ];
@@ -42,43 +60,165 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href);
   };
 
+  // Fetch notifications
+  useEffect(() => {
+    loadNotifications();
+
+    if (!isMockMode) {
+      const socket = getSocket();
+      if (socket) {
+        socket.on('notification:new', (newNotif: Notification) => {
+          setNotifications((prev) => [newNotif, ...prev]);
+        });
+      }
+    }
+
+    // Polling fallback
+    const interval = setInterval(loadNotifications, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadNotifications() {
+    try {
+      const data = await notificationsApi.list();
+      setNotifications(data);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async function handleMarkAllAsRead() {
+    try {
+      await notificationsApi.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 flex flex-col md:flex-row text-neutral-900 dark:text-neutral-100 transition-colors duration-200">
       {/* ============================================================== */}
       {/* DESKTOP SIDEBAR */}
       {/* ============================================================== */}
-      <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 h-screen p-5 shrink-0 z-30 justify-between">
-        <div className="space-y-6">
-          {/* Logo & Brand */}
+      <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 h-screen p-5 shrink-0 z-30 justify-between overflow-y-auto">
+        <div className="space-y-5">
+          {/* Logo & Brand & Notification Bell */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
                 <span className="font-extrabold text-xl tracking-tight">
                   Campus<span className="text-emerald-600 dark:text-emerald-400">Loop</span>
                 </span>
-                <span className="block text-[10px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                <span className="block text-[9px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
                   Campus Network
                 </span>
               </div>
             </Link>
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              aria-label="Toggle color theme"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-neutral-600" />}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Notification Bell with Dropdown */}
+              <div className="relative" ref={notifDropdownRef}>
+                <button
+                  onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                  className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors relative"
+                  aria-label="View notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-900 animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {showNotifDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowNotifDropdown(false)}
+                    />
+                    <div className="absolute left-0 mt-2 w-80 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+                      <div className="p-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+                        <span className="font-bold text-xs text-neutral-900 dark:text-white">
+                          Notifications ({unreadCount} unread)
+                        </span>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllAsRead}
+                            className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                          >
+                            <CheckCheck className="w-3 h-3" />
+                            <span>Mark all read</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-72 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/60">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-neutral-400">
+                            No notifications yet.
+                          </div>
+                        ) : (
+                          notifications.slice(0, 5).map((n) => (
+                            <div
+                              key={n.id}
+                              onClick={() => {
+                                setShowNotifDropdown(false);
+                                if (n.link) router.push(n.link);
+                              }}
+                              className={`p-3 text-xs cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${
+                                !n.isRead ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : ''
+                              }`}
+                            >
+                              <div className="font-bold text-neutral-900 dark:text-white flex items-center justify-between">
+                                <span>{n.title}</span>
+                                {!n.isRead && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                              </div>
+                              <p className="text-[11px] text-neutral-500 line-clamp-2 mt-0.5">
+                                {n.message}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="p-2.5 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 text-center">
+                        <Link
+                          href="/notifications"
+                          onClick={() => setShowNotifDropdown(false)}
+                          className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center justify-center gap-1"
+                        >
+                          <span>View All Notifications</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                aria-label="Toggle color theme"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-neutral-600" />}
+              </button>
+            </div>
           </div>
 
-          {/* Quick Action Button */}
+          {/* Quick Action Button: + Post or Register */}
           <div className="relative">
             <button
               onClick={() => setShowCreateMenu(!showCreateMenu)}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all hover:shadow-md"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all hover:shadow-md"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Post or Register</span>
@@ -133,13 +273,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <div className="text-xs text-neutral-500">List books, gear & dorm items</div>
                     </div>
                   </Link>
+
+                  <Link
+                    href="/trips"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
+                      <Train className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Post Train Journey</div>
+                      <div className="text-xs text-neutral-500">Activate Train Buddy radar</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/rides"
+                    onClick={() => setShowCreateMenu(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                      <Car className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Offer Ride Share</div>
+                      <div className="text-xs text-neutral-500">Split cab fares to airport/station</div>
+                    </div>
+                  </Link>
                 </div>
               </>
             )}
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5" aria-label="Desktop Sidebar Navigation">
+          <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -147,13 +315,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     active
                       ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold'
                       : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
+                  <Icon className={`w-4 h-4 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -169,7 +337,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <img
                   src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
                   alt={user.name}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
                 />
                 <div className="truncate">
                   <div className="text-xs font-bold truncate text-neutral-900 dark:text-white">
@@ -212,12 +380,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Mobile Notification Bell */}
+          <Link
+            href="/notifications"
+            className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors relative"
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </Link>
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {isAuthenticated && user ? (
@@ -225,13 +405,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <img
                 src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
                 alt={user.name}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30"
+                className="w-7 h-7 rounded-full object-cover ring-2 ring-emerald-500/30"
               />
             </Link>
           ) : (
             <Link
               href="/auth/login"
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white"
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-600 text-white"
             >
               Sign In
             </Link>
@@ -252,68 +432,88 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* MOBILE BOTTOM TAB BAR */}
       {/* ============================================================== */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-3 py-2 flex items-center justify-around"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-2 py-2 flex items-center justify-around"
         aria-label="Mobile Navigation Bar"
       >
         <Link
           href="/"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <Home className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Home</span>
+          <Home className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Home</span>
         </Link>
 
         <Link
-          href="/lost-found"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/lost-found') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          href="/trips"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/trips') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <Search className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Lost & Found</span>
+          <Train className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Trains</span>
         </Link>
 
-        {/* Action Button: Center Post Button */}
+        <Link
+          href="/rides"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/rides') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          }`}
+        >
+          <Car className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Rides</span>
+        </Link>
+
+        {/* Center Post Button */}
         <button
           onClick={() => setShowCreateMenu(true)}
-          className="flex flex-col items-center justify-center -mt-5"
+          className="flex flex-col items-center justify-center -mt-4"
           aria-label="Create new post"
         >
-          <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 transition-transform active:scale-95">
-            <PlusCircle className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
+            <PlusCircle className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Post</span>
+          <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">Post</span>
         </button>
 
         <Link
-          href="/marketplace"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/marketplace') && !isActive('/marketplace/wishlist')
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-neutral-500 dark:text-neutral-400'
+          href="/chat"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <ShoppingBag className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Market</span>
+          <MessageCircle className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Chat</span>
+        </Link>
+
+        <Link
+          href="/marketplace"
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/marketplace') && !isActive('/marketplace/wishlist')
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-neutral-500'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Market</span>
         </Link>
 
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/profile') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
+            isActive('/profile') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <User className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Profile</span>
+          <User className="w-4 h-4" />
+          <span className="text-[9px] font-semibold">Profile</span>
         </Link>
       </nav>
 
       {/* Mobile Create Post Modal */}
       {showCreateMenu && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full bg-white dark:bg-neutral-900 rounded-t-3xl p-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4 animate-in slide-in-from-bottom-5">
+          <div className="w-full bg-white dark:bg-neutral-900 rounded-t-3xl p-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4 animate-in slide-in-from-bottom-5 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800">
               <h3 className="text-base font-bold text-neutral-900 dark:text-white">Create Campus Post</h3>
               <button
@@ -325,6 +525,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="space-y-2">
+              <Link
+                href="/trips"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-teal-600 text-white">
+                    <Train className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-teal-950 dark:text-teal-100 text-sm">Post Train Journey</div>
+                    <div className="text-xs text-teal-700/80 dark:text-teal-300">Find classmates on your train</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-teal-400" />
+              </Link>
+
+              <Link
+                href="/rides"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-600 text-white">
+                    <Car className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-indigo-950 dark:text-indigo-100 text-sm">Offer Ride Share</div>
+                    <div className="text-xs text-indigo-700/80 dark:text-indigo-300">Split cab fares to airport/station</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-indigo-400" />
+              </Link>
+
               <Link
                 href="/lost-found/report-lost"
                 onClick={() => setShowCreateMenu(false)}
