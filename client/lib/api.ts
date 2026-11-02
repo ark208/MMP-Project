@@ -326,7 +326,9 @@ export const foundApi = {
     location: string;
     dateFound: string;
     imageUrl?: string;
+    holdingLocation?: any;
     secretQuestion?: string;
+    secretAnswer?: string;
     keptAt?: string;
   }): Promise<ExtendedFoundItem> {
     if (USE_MOCKS) {
@@ -347,8 +349,9 @@ export const foundApi = {
         location: data.location,
         dateFound: data.dateFound,
         imageUrl: data.imageUrl || null,
+        holdingLocation: data.holdingLocation || 'with finder',
         status: 'OPEN',
-        secretQuestion: data.secretQuestion,
+        secretQuestion: data.secretQuestion || 'What distinguishes this item?',
         keptAt: data.keptAt,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

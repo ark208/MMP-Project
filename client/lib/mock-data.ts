@@ -1,7 +1,7 @@
-import type { User, LostItem, FoundItem, Listing, ItemStatus, FoundStatus, ListingCondition, ListingStatus } from '@docs/types';
+import type { User, LostItem, FoundItem, Listing, ItemStatus, FoundStatus, HoldingLocation, ListingCondition, ListingStatus } from '@docs/types';
 
 export interface ExtendedFoundItem extends FoundItem {
-  secretQuestion?: string;
+  secretQuestion: string;
   keptAt?: string;
   claimAnswer?: string;
 }
@@ -122,6 +122,7 @@ export const INITIAL_FOUND_ITEMS: ExtendedFoundItem[] = [
     location: 'Tech Hub, 2nd Floor Reading Room',
     dateFound: '2026-11-01T16:00:00.000Z',
     imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
+    holdingLocation: 'security office',
     status: 'OPEN',
     secretQuestion: 'What stickers or engravings are under or on the transparent shell?',
     keptAt: 'Campus Security Central Office - Room 102',
@@ -143,6 +144,7 @@ export const INITIAL_FOUND_ITEMS: ExtendedFoundItem[] = [
     location: 'Walkway between Hall 3 and Dining B',
     dateFound: '2026-11-01T09:15:00.000Z',
     imageUrl: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=600&q=80',
+    holdingLocation: 'department',
     status: 'OPEN',
     secretQuestion: 'Which Marvel character figurine is on the keychain and what color is the ring?',
     keptAt: 'Hostel 3 Front Desk Reception',
@@ -164,6 +166,7 @@ export const INITIAL_FOUND_ITEMS: ExtendedFoundItem[] = [
     location: 'Lecture Hall 4, Row G',
     dateFound: '2026-10-31T13:30:00.000Z',
     imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+    holdingLocation: 'with finder',
     status: 'OPEN',
     secretQuestion: 'What name or course code is written on the inner front page?',
     keptAt: 'Student Union Information Desk',
@@ -185,6 +188,7 @@ export const INITIAL_FOUND_ITEMS: ExtendedFoundItem[] = [
     location: 'Central Cafeteria Zone C',
     dateFound: '2026-10-29T13:00:00.000Z',
     imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
+    holdingLocation: 'security office',
     status: 'CLAIMED',
     claimedByUserId: 'usr_david_007',
     claimNote: 'Has my gym clothes inside and a gym tag with locker number 88.',

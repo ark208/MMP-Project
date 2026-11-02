@@ -28,7 +28,7 @@ const createListingSchema = z.object({
     .max(100, 'Title cannot exceed 100 characters'),
   category: z.string().min(1, 'Please select a category'),
   price: z.number().min(0, 'Price must be 0 or higher (0 for free)'),
-  condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
+  condition: z.enum(['new', 'like new', 'used', 'NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
   description: z
     .string()
     .min(10, 'Please provide details on item condition, included accessories, etc.')
