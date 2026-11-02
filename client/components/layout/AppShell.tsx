@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Search,
@@ -30,14 +30,10 @@ import { NotificationBell } from './NotificationBell';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
 
   const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const notifDropdownRef = useRef<HTMLDivElement>(null);
 
   // Navigation Items (Phase 1 + Phase 2)
   const navItems = [
@@ -56,44 +52,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
-
-  // Fetch notifications
-  useEffect(() => {
-    loadNotifications();
-
-    if (!isMockMode) {
-      const socket = getSocket();
-      if (socket) {
-        socket.on('notification:new', (newNotif: Notification) => {
-          setNotifications((prev) => [newNotif, ...prev]);
-        });
-      }
-    }
-
-    // Polling fallback
-    const interval = setInterval(loadNotifications, 8000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function loadNotifications() {
-    try {
-      const data = await notificationsApi.list();
-      setNotifications(data);
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  async function handleMarkAllAsRead() {
-    try {
-      await notificationsApi.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 flex flex-col md:flex-row text-neutral-900 dark:text-neutral-100 transition-colors duration-200">
@@ -251,7 +209,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
           <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -419,7 +376,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
           }`}
         >
-          <MessageCircle className="w-4 h-4" />
+          <MessageSquare className="w-4 h-4" />
           <span className="text-[9px] font-semibold">Chat</span>
         </Link>
 
@@ -433,15 +390,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-[10px] font-semibold">Train</span>
         </Link>
 
-        <Link
-          href="/chat"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
-          }`}
-        >
-          <MessageSquare className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Chat</span>
-        </Link>
       </nav>
 
       {/* Mobile Create Post Modal */}
