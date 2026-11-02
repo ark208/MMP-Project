@@ -5,6 +5,8 @@ import { prisma } from '../config/prisma';
 import { authenticate, optionalAuth } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
 import { AppError, sendSuccess } from '../utils/response';
+import { matchingService } from '../services/matching.service';
+import { parsePagination, buildPaginationMeta } from '../utils/pagination';
 
 const router = Router();
 
@@ -54,6 +56,7 @@ export const updateFoundStatusSchema = z.object({
 /**
  * POST /api/found
  * Report a found item with holding location, secret question & hashed answer
+ * Triggers smart auto-matching against open lost items
  */
 router.post(
   '/',
@@ -103,6 +106,11 @@ router.post(
         },
       });
 
+      // Trigger auto-matching asynchronously
+      matchingService.matchNewFoundItem(foundItem).catch((matchErr) => {
+        console.error('[FoundRoutes] Auto-matching failed:', matchErr);
+      });
+
       // Omit secretAnswer from response
       const { secretAnswer: _, ...sanitized } = foundItem;
 
@@ -122,10 +130,8 @@ router.get(
   optionalAuth,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { category, status, q, page = '1', limit = '20' } = req.query as Record<string, string>;
-      const pageNum = Math.max(1, parseInt(page, 10) || 1);
-      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-      const skip = (pageNum - 1) * limitNum;
+      const { category, status, q, paginated } = req.query as Record<string, string>;
+      const { page, limit, skip } = parsePagination(req);
 
       const where: any = {
         isExpired: false,
@@ -148,22 +154,36 @@ router.get(
         ];
       }
 
-      const items = await prisma.foundItem.findMany({
-        where,
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: {
-            select: { id: true, name: true, avatarUrl: true }, // Keep email/phone hidden
+      const [items, total] = await Promise.all([
+        prisma.foundItem.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: { id: true, name: true, avatarUrl: true }, // Keep email/phone hidden
+            },
           },
-        },
-      });
+        }),
+        prisma.foundItem.count({ where }),
+      ]);
+
+      const meta = buildPaginationMeta(total, page, limit);
+
+      res.setHeader('X-Total-Count', total.toString());
+      res.setHeader('X-Total-Pages', meta.totalPages.toString());
+      res.setHeader('X-Current-Page', page.toString());
+      res.setHeader('X-Page-Size', limit.toString());
 
       // Remove secretAnswer
-      const sanitized = items.map(({ secretAnswer, ...rest }) => rest);
+      const sanitized = items.map(({ secretAnswer, ...rest }: any) => rest);
 
-      sendSuccess(res, sanitized);
+      if (paginated === 'true') {
+        sendSuccess(res, { items: sanitized, meta });
+      } else {
+        sendSuccess(res, sanitized);
+      }
     } catch (err) {
       next(err);
     }
@@ -180,34 +200,23 @@ router.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
-      const item = (await prisma.foundItem.findUnique({
+      const item = await prisma.foundItem.findUnique({
         where: { id },
         include: {
           user: {
-            select: { id: true, name: true, avatarUrl: true, email: true, phone: true },
+            select: { id: true, name: true, avatarUrl: true }, // Finder identity protected
           },
         },
-      })) as any;
+      });
 
       if (!item) {
         throw new AppError(404, 'NOT_FOUND', 'Found item not found');
       }
 
-      // Check if current user is finder, claimed owner, or admin
-      const isPrivileged =
-        req.user &&
-        (req.user.id === item.userId ||
-          req.user.id === item.claimedByUserId ||
-          req.user.role === 'ADMIN');
+      // Omit secretAnswer
+      const { secretAnswer: _, ...sanitized } = item;
 
-      const { secretAnswer: _, user, ...sanitized } = item;
-
-      // Mask contact details if not privileged
-      const userDisplay = isPrivileged
-        ? user
-        : { id: user.id, name: user.name, avatarUrl: user.avatarUrl };
-
-      sendSuccess(res, { ...sanitized, user: userDisplay });
+      sendSuccess(res, sanitized);
     } catch (err) {
       next(err);
     }
@@ -216,7 +225,8 @@ router.get(
 
 /**
  * POST /api/found/:id/claim
- * Verifies secret answer. If correct, marks item as reunited and reveals finder contact info.
+ * Submit secret question answer to verify ownership
+ * If correct, mark item reunited and reveal finder's contact details & holding location
  */
 router.post(
   '/:id/claim',
@@ -298,7 +308,7 @@ router.post(
 
 /**
  * PATCH /api/found/:id/status
- * Update status (open, reunited). Finder or admin only.
+ * Update status of found item (open, reunited). Finder or admin only.
  */
 router.patch(
   '/:id/status',
@@ -324,7 +334,8 @@ router.patch(
         data: { status },
       });
 
-      sendSuccess(res, updated);
+      const { secretAnswer: _, ...sanitized } = updated;
+      sendSuccess(res, sanitized);
     } catch (err) {
       next(err);
     }

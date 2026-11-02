@@ -4,6 +4,7 @@ import { authenticateUser, optionalAuth, AuthRequest } from '../middleware/auth'
 import { HttpError } from '../errors';
 import { notificationService } from '../services/notification.service';
 import { getSocketIO } from '../socket';
+import { parsePagination, buildPaginationMeta } from '../utils/pagination';
 
 const router = Router();
 
@@ -92,7 +93,8 @@ router.post('/', authenticateUser, async (req: AuthRequest, res: Response, next:
 // GET /api/rides - List rides with optional filters
 router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { origin, destination, status } = req.query;
+    const { origin, destination, status, paginated } = req.query as Record<string, string>;
+    const { page, limit, skip } = parsePagination(req);
 
     const where: any = {};
     if (status) {
@@ -104,7 +106,10 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next: Next
     if (origin) where.origin = String(origin);
     if (destination) where.destination = String(destination);
 
-    const rides = await prisma.ride.findMany({
+    const [rides, total] = await Promise.all([
+      prisma.ride.findMany({
+        skip,
+        take: limit,
       where,
       include: {
         creator: {
@@ -130,11 +135,29 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response, next: Next
           },
         },
       },
-    });
+      }),
+      prisma.ride.count({ where }),
+    ]);
 
-    res.json({
-      data: rides,
-    });
+    const meta = buildPaginationMeta(total, page, limit);
+
+    res.setHeader('X-Total-Count', total.toString());
+    res.setHeader('X-Total-Pages', meta.totalPages.toString());
+    res.setHeader('X-Current-Page', page.toString());
+    res.setHeader('X-Page-Size', limit.toString());
+
+    if (paginated === 'true') {
+      res.json({
+        data: {
+          items: rides,
+          meta,
+        },
+      });
+    } else {
+      res.json({
+        data: rides,
+      });
+    }
   } catch (err) {
     next(err);
   }

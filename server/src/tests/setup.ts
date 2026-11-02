@@ -19,6 +19,8 @@ export const memoryDb = {
   conversationMembers: [] as any[],
   messages: [] as any[],
   notifications: [] as any[],
+  matches: [] as any[],
+  notificationPreferences: [] as any[],
 };
 
 export function resetMemoryDb() {
@@ -36,6 +38,8 @@ export function resetMemoryDb() {
   memoryDb.conversationMembers = [];
   memoryDb.messages = [];
   memoryDb.notifications = [];
+  memoryDb.matches = [];
+  memoryDb.notificationPreferences = [];
 }
 
 // Mock Prisma for deterministic tests without requiring live PostgreSQL daemon
@@ -84,6 +88,7 @@ jest.mock('../config/prisma', () => {
         memoryDb.users = [];
         return { count: 0 };
       }),
+      count: jest.fn(async () => memoryDb.users.length),
     },
 
     otpToken: {
@@ -131,7 +136,7 @@ jest.mock('../config/prisma', () => {
         memoryDb.lostItems.push(item);
         return item;
       }),
-      findMany: jest.fn(async ({ where }: any = {}) => {
+      findMany: jest.fn(async ({ where, skip, take }: any = {}) => {
         let results = memoryDb.lostItems.slice();
         if (where?.category?.equals) {
           results = results.filter(
@@ -142,6 +147,11 @@ jest.mock('../config/prisma', () => {
           results = results.filter(
             (i) => i.status.toLowerCase() === where.status.equals.toLowerCase()
           );
+        }
+        if (typeof skip === 'number' && typeof take === 'number') {
+          results = results.slice(skip, skip + take);
+        } else if (typeof take === 'number') {
+          results = results.slice(0, take);
         }
         return results;
       }),
@@ -167,6 +177,12 @@ jest.mock('../config/prisma', () => {
         return memoryDb.lostItems[index];
       }),
       count: jest.fn(async () => memoryDb.lostItems.length),
+      delete: jest.fn(async ({ where }: any) => {
+        const index = memoryDb.lostItems.findIndex((i) => i.id === where.id);
+        if (index === -1) throw new Error('Record not found');
+        const [removed] = memoryDb.lostItems.splice(index, 1);
+        return removed;
+      }),
       deleteMany: jest.fn(async () => {
         memoryDb.lostItems = [];
         return { count: 0 };
@@ -198,12 +214,17 @@ jest.mock('../config/prisma', () => {
         memoryDb.foundItems.push(item);
         return item;
       }),
-      findMany: jest.fn(async ({ where }: any = {}) => {
+      findMany: jest.fn(async ({ where, skip, take }: any = {}) => {
         let results = memoryDb.foundItems.slice();
         if (where?.category?.equals) {
           results = results.filter(
             (i) => i.category.toLowerCase() === where.category.equals.toLowerCase()
           );
+        }
+        if (typeof skip === 'number' && typeof take === 'number') {
+          results = results.slice(skip, skip + take);
+        } else if (typeof take === 'number') {
+          results = results.slice(0, take);
         }
         return results;
       }),
@@ -233,6 +254,19 @@ jest.mock('../config/prisma', () => {
           updatedAt: new Date(),
         };
         return memoryDb.foundItems[index];
+      }),
+      delete: jest.fn(async ({ where }: any) => {
+        const index = memoryDb.foundItems.findIndex((i) => i.id === where.id);
+        if (index === -1) throw new Error('Record not found');
+        const [removed] = memoryDb.foundItems.splice(index, 1);
+        return removed;
+      }),
+      count: jest.fn(async ({ where }: any = {}) => {
+        let results = memoryDb.foundItems.slice();
+        if (where?.status) {
+          results = results.filter((i) => i.status.toLowerCase() === where.status.toLowerCase());
+        }
+        return results.length;
       }),
       deleteMany: jest.fn(async () => {
         memoryDb.foundItems = [];
@@ -327,7 +361,7 @@ jest.mock('../config/prisma', () => {
     report: {
       create: jest.fn(async ({ data }: any) => {
         const rep = {
-          id: `rep_${Date.now()}`,
+          id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           createdAt: new Date(),
           updatedAt: new Date(),
           status: 'pending',
@@ -336,7 +370,44 @@ jest.mock('../config/prisma', () => {
         memoryDb.reports.push(rep);
         return rep;
       }),
-      findMany: jest.fn(async () => memoryDb.reports.slice()),
+      findMany: jest.fn(async ({ where }: any = {}) => {
+        let results = memoryDb.reports.slice();
+        if (where?.status) {
+          results = results.filter((r) => r.status.toLowerCase() === where.status.toLowerCase());
+        }
+        if (where?.targetType) {
+          results = results.filter((r) => r.targetType.toUpperCase() === where.targetType.toUpperCase());
+        }
+        return results.map((r) => {
+          const reporter = memoryDb.users.find((u) => u.id === r.reporterId);
+          return {
+            ...r,
+            reporter: reporter ? { id: reporter.id, name: reporter.name, email: reporter.email } : undefined,
+          };
+        });
+      }),
+      count: jest.fn(async (args: any = {}) => {
+        const where = args?.where;
+        let results = memoryDb.reports.slice();
+        if (where?.status) {
+          results = results.filter((r) => r.status && r.status.toLowerCase() === where.status.toLowerCase());
+        }
+        return results.length;
+      }),
+      updateMany: jest.fn(async ({ where, data }: any = {}) => {
+        let count = 0;
+        memoryDb.reports.forEach((r) => {
+          if (
+            (!where?.targetType || r.targetType === where.targetType) &&
+            (!where?.targetId || r.targetId === where.targetId) &&
+            (!where?.status || r.status === where.status)
+          ) {
+            Object.assign(r, data, { updatedAt: new Date() });
+            count++;
+          }
+        });
+        return { count };
+      }),
       deleteMany: jest.fn(async () => {
         memoryDb.reports = [];
         return { count: 0 };
@@ -560,6 +631,19 @@ jest.mock('../config/prisma', () => {
           updatedAt: new Date(),
         };
         return memoryDb.rides[index];
+      }),
+      delete: jest.fn(async ({ where }: any) => {
+        const index = memoryDb.rides.findIndex((r) => r.id === where.id);
+        if (index === -1) throw new Error('Record not found');
+        const [removed] = memoryDb.rides.splice(index, 1);
+        return removed;
+      }),
+      count: jest.fn(async ({ where }: any = {}) => {
+        let results = memoryDb.rides.slice();
+        if (where?.status) {
+          results = results.filter((r) => r.status === where.status);
+        }
+        return results.length;
       }),
       deleteMany: jest.fn(async () => {
         memoryDb.rides = [];
@@ -832,8 +916,148 @@ jest.mock('../config/prisma', () => {
         });
         return { count };
       }),
+      count: jest.fn(async ({ where }: any = {}) => {
+        let results = memoryDb.notifications.slice();
+        if (where?.userId) {
+          results = results.filter((n) => n.userId === where.userId);
+        }
+        if (where?.isRead !== undefined) {
+          results = results.filter((n) => n.isRead === where.isRead);
+        }
+        return results.length;
+      }),
       deleteMany: jest.fn(async () => {
         memoryDb.notifications = [];
+        return { count: 0 };
+      }),
+    },
+
+    match: {
+      create: jest.fn(async ({ data }: any) => {
+        const match = {
+          id: `match_${crypto.randomBytes(4).toString('hex')}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          status: 'PENDING',
+          ...data,
+        };
+        memoryDb.matches.push(match);
+        return match;
+      }),
+      upsert: jest.fn(async ({ where, update, create }: any) => {
+        const existingIndex = memoryDb.matches.findIndex(
+          (m) =>
+            m.lostItemId === where?.lostItemId_foundItemId?.lostItemId &&
+            m.foundItemId === where?.lostItemId_foundItemId?.foundItemId
+        );
+        if (existingIndex !== -1) {
+          memoryDb.matches[existingIndex] = {
+            ...memoryDb.matches[existingIndex],
+            ...update,
+            updatedAt: new Date(),
+          };
+          return memoryDb.matches[existingIndex];
+        }
+        const match = {
+          id: `match_${crypto.randomBytes(4).toString('hex')}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          status: 'PENDING',
+          ...create,
+        };
+        memoryDb.matches.push(match);
+        return match;
+      }),
+      findMany: jest.fn(async ({ where, include, skip, take }: any = {}) => {
+        let results = memoryDb.matches.slice();
+        if (where?.OR) {
+          const lostIn = where.OR.find((cond: any) => cond.lostItemId)?.lostItemId?.in || [];
+          const foundIn = where.OR.find((cond: any) => cond.foundItemId)?.foundItemId?.in || [];
+          results = results.filter(
+            (m) => lostIn.includes(m.lostItemId) || foundIn.includes(m.foundItemId)
+          );
+        }
+        if (where?.status) {
+          results = results.filter((m) => m.status.toUpperCase() === where.status.toUpperCase());
+        }
+        if (typeof skip === 'number' && typeof take === 'number') {
+          results = results.slice(skip, skip + take);
+        }
+        return results.map((m) => {
+          const res = { ...m };
+          if (include?.lostItem) {
+            const lost = memoryDb.lostItems.find((l) => l.id === m.lostItemId);
+            res.lostItem = lost ? { ...lost, user: memoryDb.users.find((u) => u.id === lost.userId) } : null;
+          }
+          if (include?.foundItem) {
+            const found = memoryDb.foundItems.find((f) => f.id === m.foundItemId);
+            res.foundItem = found ? { ...found, user: memoryDb.users.find((u) => u.id === found.userId) } : null;
+          }
+          return res;
+        });
+      }),
+      findUnique: jest.fn(async ({ where, include }: any) => {
+        const match = memoryDb.matches.find((m) => m.id === where.id);
+        if (!match) return null;
+        const res = { ...match };
+        if (include?.lostItem) {
+          const lost = memoryDb.lostItems.find((l) => l.id === match.lostItemId);
+          res.lostItem = lost ? { ...lost, user: memoryDb.users.find((u) => u.id === lost.userId) } : null;
+        }
+        if (include?.foundItem) {
+          const found = memoryDb.foundItems.find((f) => f.id === match.foundItemId);
+          res.foundItem = found ? { ...found, user: memoryDb.users.find((u) => u.id === found.userId) } : null;
+        }
+        return res;
+      }),
+      update: jest.fn(async ({ where, data }: any) => {
+        const index = memoryDb.matches.findIndex((m) => m.id === where.id);
+        if (index === -1) throw new Error('Record not found');
+        memoryDb.matches[index] = { ...memoryDb.matches[index], ...data, updatedAt: new Date() };
+        return memoryDb.matches[index];
+      }),
+      count: jest.fn(async ({ where }: any = {}) => {
+        let results = memoryDb.matches.slice();
+        if (where?.OR) {
+          const lostIn = where.OR.find((cond: any) => cond.lostItemId)?.lostItemId?.in || [];
+          const foundIn = where.OR.find((cond: any) => cond.foundItemId)?.foundItemId?.in || [];
+          results = results.filter(
+            (m) => lostIn.includes(m.lostItemId) || foundIn.includes(m.foundItemId)
+          );
+        }
+        return results.length;
+      }),
+      deleteMany: jest.fn(async () => {
+        memoryDb.matches = [];
+        return { count: 0 };
+      }),
+    },
+
+    notificationPreference: {
+      findUnique: jest.fn(async ({ where }: any) => {
+        return memoryDb.notificationPreferences.find((p) => p.userId === where.userId) || null;
+      }),
+      upsert: jest.fn(async ({ where, update, create }: any) => {
+        const index = memoryDb.notificationPreferences.findIndex((p) => p.userId === where.userId);
+        if (index !== -1) {
+          memoryDb.notificationPreferences[index] = {
+            ...memoryDb.notificationPreferences[index],
+            ...update,
+            updatedAt: new Date(),
+          };
+          return memoryDb.notificationPreferences[index];
+        }
+        const pref = {
+          id: `pref_${crypto.randomBytes(4).toString('hex')}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...create,
+        };
+        memoryDb.notificationPreferences.push(pref);
+        return pref;
+      }),
+      deleteMany: jest.fn(async () => {
+        memoryDb.notificationPreferences = [];
         return { count: 0 };
       }),
     },

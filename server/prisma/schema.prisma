@@ -46,17 +46,21 @@ model User {
   updatedAt  DateTime @updatedAt
 
   lostItems               LostItem[]
-  foundItems              FoundItem[]           @relation("FoundReported")
-  claimedFoundItems       FoundItem[]           @relation("ClaimedFoundItems")
+  foundItems              FoundItem[]              @relation("FoundReported")
+  claimedFoundItems       FoundItem[]              @relation("ClaimedFoundItems")
   trainTrips              TrainTrip[]
-  createdRides            Ride[]                @relation("CreatedRides")
+  createdRides            Ride[]                   @relation("CreatedRides")
   rideMemberships         RideMember[]
   listings                Listing[]
   wishlists               Wishlist[]
   sentMessages            Message[]
   notifications           Notification[]
-  filedReports            Report[]              @relation("Reporter")
+  notificationPreference  NotificationPreference?
+  filedReports            Report[]                 @relation("Reporter")
   conversationMemberships ConversationMember[]
+
+  @@index([role])
+  @@index([isBanned])
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -90,7 +94,13 @@ model LostItem {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  matches            Match[]
+
+  @@index([userId])
   @@index([category, status])
+  @@index([status, isExpired])
+  @@index([dateLost])
+  @@index([createdAt])
 }
 
 model FoundItem {
@@ -115,7 +125,33 @@ model FoundItem {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  matches         Match[]
+
+  @@index([userId])
   @@index([category, status])
+  @@index([status, isExpired])
+  @@index([dateFound])
+  @@index([createdAt])
+}
+
+model Match {
+  id          String    @id @default(uuid())
+  lostItemId  String
+  lostItem    LostItem  @relation(fields: [lostItemId], references: [id], onDelete: Cascade)
+  foundItemId String
+  foundItem   FoundItem @relation(fields: [foundItemId], references: [id], onDelete: Cascade)
+  score       Float
+  reasons     String[]
+  status      String    @default("PENDING") // "PENDING", "ACCEPTED", "DISMISSED"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([lostItemId, foundItemId])
+  @@index([lostItemId])
+  @@index([foundItemId])
+  @@index([score])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── Train Buddy Radar ────────────────────────────────────────────────────────
@@ -133,6 +169,10 @@ model TrainTrip {
   departureTime String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([trainNumber, date])
+  @@index([fromStation, toStation])
 }
 
 // ─── Ride Sharing ─────────────────────────────────────────────────────────────
@@ -153,6 +193,11 @@ model Ride {
   conversation   Conversation?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([origin, destination])
+  @@index([departureTime])
 }
 
 model RideMember {
@@ -164,6 +209,8 @@ model RideMember {
   joinedAt DateTime @default(now())
 
   @@unique([rideId, userId])
+  @@index([rideId])
+  @@index([userId])
 }
 
 // ─── Marketplace ──────────────────────────────────────────────────────────────
@@ -185,7 +232,11 @@ model Listing {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
+  @@index([sellerId])
   @@index([category, status])
+  @@index([status, isExpired])
+  @@index([price])
+  @@index([createdAt])
 }
 
 model Wishlist {
@@ -197,6 +248,8 @@ model Wishlist {
   createdAt DateTime @default(now())
 
   @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -222,6 +275,8 @@ model ConversationMember {
   joinedAt       DateTime     @default(now())
 
   @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
 }
 
 model Message {
@@ -232,6 +287,9 @@ model Message {
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   content        String
   createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -246,6 +304,26 @@ model Notification {
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailMatches        Boolean  @default(true)
+  emailRideJoins      Boolean  @default(true)
+  emailMessages       Boolean  @default(true)
+  whatsappMatches     Boolean  @default(false)
+  whatsappRideJoins   Boolean  @default(false)
+  whatsappMessages    Boolean  @default(false)
+  whatsappNumber      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ─── Reports / Moderation ─────────────────────────────────────────────────────
@@ -254,11 +332,16 @@ model Report {
   id         String   @id @default(uuid())
   reporterId String
   reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetType String   // "LISTING", "LOST_ITEM", "FOUND_ITEM", "USER"
+  targetType String   // "LISTING", "LOST_ITEM", "FOUND_ITEM", "USER", "RIDE"
   targetId   String
   reason     String
   details    String?
   status     String   @default("pending") // "pending", "reviewed", "dismissed"
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([reporterId])
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

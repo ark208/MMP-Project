@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import { env } from './config/env';
 import { globalLimiter } from './middlewares/rateLimiter';
 import { errorHandler } from './middlewares/errorHandler';
+import { sanitizeInput } from './middlewares/sanitize';
 import { startExpiryCron } from './services/cron.service';
 import { sendSuccess } from './utils/response';
 
@@ -28,6 +29,7 @@ import foundRoutes from './routes/found.routes';
 import listingRoutes from './routes/listing.routes';
 import wishlistRoutes from './routes/wishlist.routes';
 import reportRoutes from './routes/report.routes';
+import matchRoutes from './routes/match.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -52,8 +54,11 @@ app.use(
 );
 app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(globalLimiter);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input sanitization pass
+app.use(sanitizeInput);
 
 // Serve local uploads
 app.use('/uploads', express.static(env.UPLOAD_DIR));
@@ -63,7 +68,7 @@ app.get('/', (_req: Request, res: Response) => {
   sendSuccess(res, {
     name: 'CampusLoop API',
     status: 'healthy',
-    version: '2.0.0',
+    version: '3.0.0',
     timestamp: new Date().toISOString(),
   });
 });
@@ -90,9 +95,10 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/lost', lostRoutes);
 app.use('/api/found', foundRoutes);
+app.use('/api/matches', matchRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/wishlist', wishlistRoutes);
-app.use('/api', reportRoutes); // keep last: handles /api/reports and /api/admin/*
+app.use('/api', reportRoutes); // handles /api/reports, /api/admin/reports, /api/admin/posts/:type/:id, /api/admin/users/:id/ban, /api/admin/analytics
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
@@ -113,12 +119,13 @@ if (env.NODE_ENV !== 'test') {
   startExpiryCron();
 }
 
-// Export for tests and socket modules
-export { app, server, io };
-
-// Start listening
-if (env.NODE_ENV !== 'test') {
+// Server listen if not imported for testing
+if (process.env.NODE_ENV !== 'test') {
   server.listen(env.PORT, () => {
-    console.log(`🚀 CampusLoop Server running on http://localhost:${env.PORT}`);
+    console.log(`🚀 CampusLoop Server running on port ${env.PORT}`);
+    console.log(`📡 WebSocket ready on ws://localhost:${env.PORT}`);
+    console.log(`🔗 Allowed domain: @${env.ALLOWED_EMAIL_DOMAIN}`);
   });
 }
+
+export { app, server, io };
