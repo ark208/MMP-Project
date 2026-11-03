@@ -52,26 +52,28 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
     try {
       socket = getSocket();
-      if (!socket.connected) {
-        socket.connect();
+      if (socket) {
+        if (!socket.connected) {
+          socket.connect();
+        }
+
+        const handleNewNotification = (notif: Notification) => {
+          setNotifications((prev) => {
+            // Avoid duplicate notifications
+            if (prev.some((n) => n.id === notif.id)) return prev;
+            return [notif, ...prev];
+          });
+
+          // Trigger in-app toast
+          toast.info(notif.message || notif.title);
+        };
+
+        socket.on('notification:new', handleNewNotification);
+
+        return () => {
+          socket?.off('notification:new', handleNewNotification);
+        };
       }
-
-      const handleNewNotification = (notif: Notification) => {
-        setNotifications((prev) => {
-          // Avoid duplicate notifications
-          if (prev.some((n) => n.id === notif.id)) return prev;
-          return [notif, ...prev];
-        });
-
-        // Trigger in-app toast
-        toast.info(notif.message || notif.title);
-      };
-
-      socket.on('notification:new', handleNewNotification);
-
-      return () => {
-        socket?.off('notification:new', handleNewNotification);
-      };
     } catch (err) {
       console.warn('[Notifications] Socket connection error:', err);
     }

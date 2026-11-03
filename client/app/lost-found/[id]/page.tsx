@@ -28,6 +28,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { fireReunitedConfetti } from '@/lib/confetti';
+import { ReportButton } from '@/components/report/ReportButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const claimSchema = z.object({
@@ -107,14 +108,16 @@ export default function LostFoundDetailPage() {
 
     startTransition(async () => {
       try {
-        const updated = await api.found.claim(id, {
+        const res = await api.found.claim(id, {
           answer: data.answer,
           note: data.note,
           proofImageUrl: data.proofImageUrl,
         });
-        setFoundItem(updated);
+        setFoundItem((prev: any) =>
+          res?.item ? { ...prev, ...res.item, finderContact: res.finderContact } : res
+        );
         setShowClaimModal(false);
-        toast.success('Claim submitted! The custody desk will review your secret verification answer.');
+        toast.success(res?.message || 'Ownership verified! Claim approved.');
       } catch (err: any) {
         toast.error(err.message || 'Failed to submit claim');
       }
@@ -348,7 +351,7 @@ export default function LostFoundDetailPage() {
           </div>
 
           {/* Actions Bar */}
-          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-3">
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center gap-3">
             {/* If Found & Not Resolved & Not Claimed: Claim button */}
             {!isLost && !isResolved && (
               <button
@@ -371,6 +374,13 @@ export default function LostFoundDetailPage() {
                 <span>Mark as Reunited 🎉</span>
               </button>
             )}
+
+            <ReportButton
+              targetType={isLost ? 'LOST' : 'FOUND'}
+              targetId={currentItem.id}
+              targetTitle={currentItem.title}
+              variant="button"
+            />
 
             {isResolved && (
               <div className="w-full py-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-center font-bold text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-center gap-2">

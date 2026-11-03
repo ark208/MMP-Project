@@ -119,6 +119,23 @@ describe('Auth Endpoints (/api/auth)', () => {
 
       expect(meRes.status).toBe(200);
       expect(meRes.body.data.email).toBe('alex@campus.edu');
+
+      // 3. Update profile via PATCH /api/me
+      const patchRes = await request(app)
+        .patch('/api/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Alex Rivera',
+          department: 'Computer Science',
+          year: '4th Year',
+          phone: '+15551234567',
+        });
+
+      expect(patchRes.status).toBe(200);
+      expect(patchRes.body.data.name).toBe('Alex Rivera');
+      expect(patchRes.body.data.department).toBe('Computer Science');
+      expect(patchRes.body.data.year).toBe('4th Year');
+      expect(patchRes.body.data.phone).toBe('+15551234567');
     });
   });
 });

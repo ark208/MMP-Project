@@ -28,7 +28,7 @@ export const createReportSchema = z.object({
 });
 
 export const banUserSchema = z.object({
-  isBanned: z.boolean(),
+  isBanned: z.boolean().default(true),
   reason: z.string().optional(),
 });
 

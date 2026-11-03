@@ -23,6 +23,7 @@ import {
   Car,
   MessageSquare,
   Bell,
+  ShieldAlert,
 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
@@ -35,7 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
-  // Navigation Items (Phase 1 + Phase 2)
+  // Navigation Items (Phase 1 + Phase 2 + Phase 3 Admin)
   const navItems = [
     { label: 'Home', href: '/', icon: Home },
     { label: 'Lost & Found', href: '/lost-found', icon: Search },
@@ -46,6 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { label: 'Notifications', href: '/notifications', icon: Bell },
     { label: 'Wishlist', href: '/marketplace/wishlist', icon: Heart },
     { label: 'Profile', href: '/profile', icon: User },
+    ...(user?.role === 'ADMIN' ? [{ label: 'Admin Console', href: '/admin', icon: ShieldAlert }] : []),
   ];
 
   const isActive = (href: string) => {

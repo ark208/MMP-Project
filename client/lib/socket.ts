@@ -21,7 +21,7 @@ export function getSocket(token?: string): Socket | null {
       },
     });
 
-    socket.on('connect_error', (err) => {
+    socket.on('connect_error', (err: any) => {
       console.warn('[Socket.io] Connection error, using polling fallback:', err.message);
     });
   }

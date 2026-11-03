@@ -43,8 +43,7 @@ const registerFoundSchema = z.object({
     .string()
     .min(1, 'Secret answer is required for ownership verification'),
   holdingLocation: z
-    .enum(['with finder', 'security office', 'department'])
-    .default('with finder'),
+    .enum(['with finder', 'security office', 'department']),
   keptAt: z
     .string()
     .min(3, 'Please specify where the item is securely kept or surrendered'),

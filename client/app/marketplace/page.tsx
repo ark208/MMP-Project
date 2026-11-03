@@ -17,6 +17,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast-context';
 import { ItemCardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SafetyBanner } from '@/components/safety/SafetyBanner';
 
 const CATEGORIES = [
   'ALL',
@@ -128,6 +129,9 @@ export default function MarketplacePage() {
           </Link>
         </div>
       </div>
+
+      {/* Safety Tips Banner */}
+      <SafetyBanner type="marketplace" defaultExpanded={false} />
 
       {/* Search & Filters */}
       <div className="space-y-3">

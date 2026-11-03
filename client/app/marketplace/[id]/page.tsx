@@ -19,6 +19,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ReportButton } from '@/components/report/ReportButton';
+import { SafetyBanner } from '@/components/safety/SafetyBanner';
 
 export default function MarketplaceDetailPage() {
   const params = useParams();
@@ -193,17 +195,25 @@ export default function MarketplaceDetailPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 {listing.category}
               </span>
-              <button
-                onClick={toggleWishlist}
-                className={`p-2.5 rounded-full border transition-all ${
-                  listing.isWishlisted
-                    ? 'border-rose-200 bg-rose-50 dark:bg-rose-950/60 text-rose-500 shadow-sm'
-                    : 'border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                }`}
-                title={listing.isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}
-              >
-                <Heart className={`w-5 h-5 ${listing.isWishlisted ? 'fill-current' : ''}`} />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <ReportButton
+                  targetType="LISTING"
+                  targetId={listing.id}
+                  targetTitle={listing.title}
+                  variant="icon"
+                />
+                <button
+                  onClick={toggleWishlist}
+                  className={`p-2.5 rounded-full border transition-all ${
+                    listing.isWishlisted
+                      ? 'border-rose-200 bg-rose-50 dark:bg-rose-950/60 text-rose-500 shadow-sm'
+                      : 'border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                  }`}
+                  title={listing.isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}
+                >
+                  <Heart className={`w-5 h-5 ${listing.isWishlisted ? 'fill-current' : ''}`} />
+                </button>
+              </div>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight">
@@ -276,6 +286,9 @@ export default function MarketplaceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Safety Tips Banner */}
+      <SafetyBanner type="marketplace" />
     </div>
   );
 }

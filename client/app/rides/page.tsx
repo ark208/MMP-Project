@@ -24,7 +24,10 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { api } from '@/lib/api';
+import { getSocket } from '@/lib/socket';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ReportButton } from '@/components/report/ReportButton';
+import { SafetyBanner } from '@/components/safety/SafetyBanner';
 import type { Ride, RideStatus, FareSplitInfo } from '@docs/types';
 
 const CAMPUS_PICKUP_PRESETS = [
@@ -78,6 +81,70 @@ export default function RidesPage() {
   useEffect(() => {
     loadRides();
   }, [statusFilter]);
+
+  // Real-time Socket.io listener for ride updates (seats, status, joins)
+  useEffect(() => {
+    let socket: ReturnType<typeof getSocket> | null = null;
+    try {
+      socket = getSocket();
+      if (socket) {
+        if (!socket.connected) {
+          socket.connect();
+        }
+
+        const handleRideUpdated = (data: {
+          id: string;
+          availableSeats?: number;
+          status?: string;
+          updatedAt?: string;
+        }) => {
+          setRides((prev) =>
+            prev.map((r) =>
+              r.id === data.id
+                ? {
+                    ...r,
+                    availableSeats:
+                      data.availableSeats !== undefined
+                        ? data.availableSeats
+                        : r.availableSeats,
+                    status: (data.status as any) || r.status,
+                    updatedAt: data.updatedAt || new Date().toISOString(),
+                  }
+                : r
+            )
+          );
+          setSelectedRideForSplit((prev) =>
+            prev && prev.id === data.id
+              ? {
+                  ...prev,
+                  availableSeats:
+                    data.availableSeats !== undefined
+                      ? data.availableSeats
+                      : prev.availableSeats,
+                  status: (data.status as any) || prev.status,
+                }
+              : prev
+          );
+        };
+
+        socket.on('ride:updated', handleRideUpdated);
+
+        // Subscribe to listed rides
+        rides.forEach((r) => {
+          socket?.emit('ride:subscribe', r.id);
+        });
+
+        return () => {
+          socket?.off('ride:updated', handleRideUpdated);
+          rides.forEach((r) => {
+            socket?.emit('ride:unsubscribe', r.id);
+          });
+        };
+      }
+    } catch (err) {
+      console.warn('[Rides] Socket subscription error:', err);
+    }
+  }, [rides.length]);
 
   const handleCreateRide = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,6 +331,9 @@ export default function RidesPage() {
             <span>{showCreateForm ? 'Cancel Offer' : 'Offer a Ride'}</span>
           </button>
         </div>
+
+        {/* Safety Tips Banner */}
+        <SafetyBanner type="rides" defaultExpanded={false} />
 
         {/* ============================================================== */}
         {/* CREATE RIDE FORM (WITH PRESETS) */}
@@ -644,6 +714,13 @@ export default function RidesPage() {
                           )}
                         </>
                       )}
+
+                      <ReportButton
+                        variant="icon"
+                        targetType="RIDE"
+                        targetId={ride.id}
+                        targetTitle={`${ride.origin} to ${ride.destination}`}
+                      />
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
@@ -7,6 +7,7 @@ import helmet from 'helmet';
 
 // Shared config / middleware / services (remote)
 import { env } from './config/env';
+import { prisma } from './config/prisma';
 import { globalLimiter } from './middlewares/rateLimiter';
 import { errorHandler } from './middlewares/errorHandler';
 import { sanitizeInput } from './middlewares/sanitize';
@@ -34,10 +35,24 @@ import matchRoutes from './routes/match.routes';
 const app = express();
 const server = http.createServer(app);
 
+// CORS configuration supporting local dev & production origins
+const allowedOrigins = (env.CLIENT_URL || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .concat(['http://localhost:3000', 'http://127.0.0.1:3000']);
+
+const corsOriginDelegate = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV === 'development') {
+    callback(null, true);
+  } else {
+    callback(new Error('Not allowed by CORS'));
+  }
+};
+
 // Socket.io initialization with CORS
 const io = new SocketIOServer(server, {
   cors: {
-    origin: env.CLIENT_URL,
+    origin: corsOriginDelegate,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -52,7 +67,14 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow serving uploaded images across origins
   })
 );
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: corsOriginDelegate,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  })
+);
 app.use(globalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -84,6 +106,28 @@ app.get('/api/health', (_req: Request, res: Response) => {
 // GET /api/me - authenticated user profile
 app.get('/api/me', authenticateUser, (req: AuthRequest, res: Response) => {
   res.json({ data: req.user });
+});
+
+// PATCH /api/me - update authenticated user profile
+app.patch('/api/me', authenticateUser, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const { name, department, year, phone, avatarUrl } = req.body;
+    const dataToUpdate: any = {};
+    if (name !== undefined) dataToUpdate.name = String(name).trim();
+    if (department !== undefined) dataToUpdate.department = department ? String(department).trim() : null;
+    if (year !== undefined) dataToUpdate.year = year ? String(year).trim() : null;
+    if (phone !== undefined) dataToUpdate.phone = phone ? String(phone).trim() : null;
+    if (avatarUrl !== undefined) dataToUpdate.avatarUrl = avatarUrl && String(avatarUrl).trim() !== '' ? String(avatarUrl).trim() : null;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: dataToUpdate,
+    });
+    res.json({ data: updatedUser });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Mount module routes

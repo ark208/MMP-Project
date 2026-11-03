@@ -14,6 +14,11 @@ import type {
   Conversation,
   Message,
   Notification,
+  Match,
+  MatchStatus,
+  NotificationPreference,
+  Report,
+  AdminAnalytics,
 } from "@docs/types";
 
 export interface ExtendedFoundItem extends FoundItem {
@@ -35,6 +40,9 @@ export interface MockStore {
   conversations: Conversation[];
   messages: Record<string, Message[]>;
   notifications: Notification[];
+  matches: Match[];
+  preferences: NotificationPreference;
+  reports: Report[];
 }
 
 export const DEFAULT_USER: User = {
@@ -934,13 +942,115 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     title: "Possible Item Match!",
     message: "A found item matching 'AirPods Pro' was recently registered.",
     type: "MATCH",
-    link: "/lost-found",
-    isRead: true,
+    link: "/lost-found/match/match_001",
+    isRead: false,
     createdAt: "2026-11-01T15:15:00.000Z",
   },
 ];
 
-const STORAGE_KEY = "campusloop_mock_store_v2";
+export const INITIAL_MATCHES: Match[] = [
+  {
+    id: "match_001",
+    lostItemId: "lost_001",
+    lostItem: INITIAL_LOST_ITEMS[0],
+    foundItemId: "found_101",
+    foundItem: INITIAL_FOUND_ITEMS[0],
+    score: 0.88,
+    reasons: [
+      "Exact Category Match: Electronics",
+      "High text similarity in title & description (85%)",
+      "Reported in the same campus zone: Student Union (2nd Floor)",
+      "Reported within 15 minutes of loss",
+    ],
+    status: "PENDING",
+    createdAt: "2026-11-01T15:15:00.000Z",
+    updatedAt: "2026-11-01T15:15:00.000Z",
+  },
+  {
+    id: "match_002",
+    lostItemId: "lost_002",
+    lostItem: INITIAL_LOST_ITEMS[1],
+    foundItemId: "found_102",
+    foundItem: INITIAL_FOUND_ITEMS[1],
+    score: 0.74,
+    reasons: [
+      "Exact Category Match: Accessories",
+      "Keyword overlap: 'bottle', 'hydro flask', 'blue'",
+      "Proximity: Campus Gym / Recreation Center",
+    ],
+    status: "ACCEPTED",
+    createdAt: "2026-11-01T12:00:00.000Z",
+    updatedAt: "2026-11-01T14:30:00.000Z",
+  },
+];
+
+export const INITIAL_PREFERENCES: NotificationPreference = {
+  id: "pref_001",
+  userId: "usr_alex_001",
+  emailMatches: true,
+  emailRideJoins: true,
+  emailMessages: true,
+  whatsappMatches: false,
+  whatsappRideJoins: true,
+  whatsappMessages: false,
+  whatsappNumber: "+1 (555) 234-5678",
+  createdAt: "2026-10-01T10:00:00.000Z",
+  updatedAt: "2026-11-01T12:00:00.000Z",
+};
+
+export const INITIAL_REPORTS: Report[] = [
+  {
+    id: "rep_001",
+    reporterId: "usr_priya_002",
+    reporter: {
+      id: "usr_priya_002",
+      name: "Priya Sharma",
+      email: "priya@campus.edu",
+      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+    },
+    targetType: "LISTING",
+    targetId: "list_305",
+    reason: "Suspected commercial reseller",
+    details: "User posted multiple bulk items with inflated prices, violates campus marketplace non-commercial rule.",
+    status: "PENDING",
+    createdAt: "2026-11-02T11:20:00.000Z",
+    updatedAt: "2026-11-02T11:20:00.000Z",
+  },
+  {
+    id: "rep_002",
+    reporterId: "usr_alex_001",
+    reporter: {
+      id: "usr_alex_001",
+      name: "Alex Chen",
+      email: "student@campus.edu",
+    },
+    targetType: "RIDE",
+    targetId: "ride_403",
+    reason: "Unresponsive driver / no-show",
+    details: "Driver did not show up at North Gate pickup spot and did not answer chat messages.",
+    status: "RESOLVED",
+    createdAt: "2026-11-01T09:15:00.000Z",
+    updatedAt: "2026-11-01T14:30:00.000Z",
+  },
+  {
+    id: "rep_003",
+    reporterId: "usr_marcus_003",
+    reporter: {
+      id: "usr_marcus_003",
+      name: "Marcus Vance",
+      email: "marcus@campus.edu",
+    },
+    targetType: "LOST",
+    targetId: "lost_003",
+    reason: "Duplicate / spam post",
+    details: "Identical item posted 4 times in 10 minutes.",
+    status: "PENDING",
+    createdAt: "2026-11-02T17:45:00.000Z",
+    updatedAt: "2026-11-02T17:45:00.000Z",
+  },
+];
+
+const STORAGE_KEY = "campusloop_mock_store_v3";
 
 export function getMockStore(): MockStore {
   const defaultInitial: MockStore = {
@@ -956,6 +1066,9 @@ export function getMockStore(): MockStore {
     conversations: INITIAL_CONVERSATIONS,
     messages: INITIAL_MESSAGES,
     notifications: INITIAL_NOTIFICATIONS,
+    matches: INITIAL_MATCHES,
+    preferences: INITIAL_PREFERENCES,
+    reports: INITIAL_REPORTS,
   };
 
   if (typeof window === "undefined") {
@@ -966,7 +1079,6 @@ export function getMockStore(): MockStore {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Ensure missing Phase 2 collections fall back gracefully
       return {
         ...defaultInitial,
         ...parsed,
@@ -976,6 +1088,9 @@ export function getMockStore(): MockStore {
         conversations: parsed.conversations || defaultInitial.conversations,
         messages: parsed.messages || defaultInitial.messages,
         notifications: parsed.notifications || defaultInitial.notifications,
+        matches: parsed.matches || defaultInitial.matches,
+        preferences: parsed.preferences || defaultInitial.preferences,
+        reports: parsed.reports || defaultInitial.reports,
       };
     }
   } catch (err) {

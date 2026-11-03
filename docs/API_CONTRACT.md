@@ -138,6 +138,38 @@ Fetches the current authenticated user profile.
   }
   ```
 
+#### `PATCH /api/me`
+Updates profile information of the current authenticated user.
+- **Auth**: Required (`Bearer <token>`)
+- **Request Body**:
+  ```json
+  {
+    "name": "Jane Doe Updated",
+    "department": "Computer Science",
+    "year": "4th Year",
+    "phone": "+1234567890",
+    "avatarUrl": "https://images.unsplash.com/photo-..."
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "id": "usr_123",
+      "email": "student@campus.edu",
+      "name": "Jane Doe Updated",
+      "department": "Computer Science",
+      "year": "4th Year",
+      "phone": "+1234567890",
+      "avatarUrl": "https://images.unsplash.com/photo-...",
+      "role": "USER",
+      "isBanned": false,
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "updatedAt": "2026-11-01T12:30:00.000Z"
+    }
+  }
+  ```
+
 ---
 
 ### 3.2 File Uploads
@@ -1250,6 +1282,8 @@ Admin moderation deletion of offending content.
   ```json
   {
     "data": {
+      "message": "Offending post deleted successfully",
+      "success": true,
       "type": "listing",
       "id": "list_301",
       "deleted": true
@@ -1258,7 +1292,7 @@ Admin moderation deletion of offending content.
   ```
 
 #### `PATCH /api/admin/users/:id/ban`
-Bans or unbans a user account from the platform.
+Bans or unbans a user account from the platform (`isBanned` defaults to `true` if omitted).
 - **Auth**: Required (Admin only)
 - **Request Body**:
   ```json
@@ -1271,6 +1305,8 @@ Bans or unbans a user account from the platform.
   ```json
   {
     "data": {
+      "message": "User banned successfully",
+      "success": true,
       "id": "usr_999",
       "isBanned": true,
       "updatedAt": "2026-11-01T16:30:00.000Z"

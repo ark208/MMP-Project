@@ -176,7 +176,7 @@ router.post(
 );
 
 /**
- * GET /api/me
+ * GET /api/auth/me (or /api/me)
  * Retrieves profile of currently authenticated user
  */
 router.get(
@@ -184,6 +184,35 @@ router.get(
   authenticate,
   (req: Request, res: Response): void => {
     sendSuccess(res, req.user);
+  }
+);
+
+/**
+ * PATCH /api/auth/me
+ * Updates profile of currently authenticated user
+ */
+router.patch(
+  '/me',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user!;
+      const { name, department, year, phone, avatarUrl } = req.body;
+      const dataToUpdate: any = {};
+      if (name !== undefined) dataToUpdate.name = String(name).trim();
+      if (department !== undefined) dataToUpdate.department = department ? String(department).trim() : null;
+      if (year !== undefined) dataToUpdate.year = year ? String(year).trim() : null;
+      if (phone !== undefined) dataToUpdate.phone = phone ? String(phone).trim() : null;
+      if (avatarUrl !== undefined) dataToUpdate.avatarUrl = avatarUrl && String(avatarUrl).trim() !== '' ? String(avatarUrl).trim() : null;
+
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: dataToUpdate,
+      });
+      sendSuccess(res, updatedUser);
+    } catch (err) {
+      next(err);
+    }
   }
 );
 
