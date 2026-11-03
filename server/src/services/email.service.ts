@@ -1,13 +1,21 @@
-import nodemailer from 'nodemailer';
-import { env } from '../config/env';
+import nodemailer from "nodemailer";
+import { env } from "../config/env";
 
 let transporter: nodemailer.Transporter | null = null;
 
-if (env.SMTP_HOST && env.SMTP_USER) {
+const smtpConfigured = Boolean(
+  env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS && env.SMTP_FROM,
+);
+
+if (smtpConfigured) {
   transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_PORT === 465,
+    requireTLS: env.SMTP_PORT === 587,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASS,
@@ -16,7 +24,9 @@ if (env.SMTP_HOST && env.SMTP_USER) {
 }
 
 /**
- * Common helper to dispatch email via Nodemailer or log in development
+ * Common helper to dispatch emails via Nodemailer.
+ * Development can log email content when SMTP is not configured.
+ * Production must always use a configured SMTP transporter.
  */
 async function sendMailHelper(options: {
   to: string;
@@ -25,28 +35,50 @@ async function sendMailHelper(options: {
   html: string;
   logTag: string;
 }): Promise<void> {
-  if (env.NODE_ENV !== 'production' || !transporter) {
+  // Development-only fallback. Never log OTPs in production.
+  if (!transporter) {
+    if (env.NODE_ENV === "production") {
+      console.error(
+        `Cannot send ${options.logTag} email: SMTP is not configured.`,
+      );
+      throw new Error("Email service is not configured");
+    }
+
     console.log(`\n======================================================`);
     console.log(`📧 [DEV EMAIL ${options.logTag}] To: ${options.to}`);
     console.log(`📝 Subject: ${options.subject}`);
     console.log(`📄 Text:\n${options.text.trim()}`);
     console.log(`======================================================\n`);
+
+    return;
   }
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: env.SMTP_FROM,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-      });
-    } catch (error) {
-      console.error(`Failed to send ${options.logTag} email via SMTP:`, error);
-      if (env.NODE_ENV === 'production') {
-        throw new Error(`Could not send ${options.logTag} email`);
-      }
+  try {
+    await transporter.sendMail({
+      from: env.SMTP_FROM,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    });
+
+    console.log(`${options.logTag} email sent successfully.`);
+  } catch (error) {
+    const smtpError = error as {
+      code?: string;
+      command?: string;
+      message?: string;
+    };
+
+    // Log diagnostic information, never email content or OTP values.
+    console.error(`Failed to send ${options.logTag} email via SMTP:`, {
+      code: smtpError.code,
+      command: smtpError.command,
+      message: smtpError.message,
+    });
+
+    if (env.NODE_ENV === "production") {
+      throw new Error(`Could not send ${options.logTag} email`);
     }
   }
 }
@@ -55,8 +87,12 @@ async function sendMailHelper(options: {
  * 1. OTP Verification Email
  */
 export async function sendOtpEmail(email: string, otp: string): Promise<void> {
-  const subject = 'Your CampusLoop Verification Code';
-  const text = `Your CampusLoop one-time verification code is: ${otp}\nThis code will expire in 10 minutes.\nIf you did not request this code, please ignore this email.`;
+  const subject = "Your CampusLoop Verification Code";
+
+  const text = `Your CampusLoop one-time verification code is: ${otp}
+This code will expire in 10 minutes.
+If you did not request this code, please ignore this email.`;
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
       <h2 style="color: #059669;">CampusLoop Verification</h2>
@@ -68,7 +104,13 @@ export async function sendOtpEmail(email: string, otp: string): Promise<void> {
     </div>
   `;
 
-  await sendMailHelper({ to: email, subject, text, html, logTag: 'OTP' });
+  await sendMailHelper({
+    to: email,
+    subject,
+    text,
+    html,
+    logTag: "OTP",
+  });
 }
 
 /**
@@ -83,15 +125,27 @@ export async function sendMatchEmail(
     score: number;
     reasons: string[];
     matchUrl?: string;
-  }
+  },
 ): Promise<void> {
   const scorePercent = Math.round(params.score * 100);
   const subject = `Possible Item Match Found! (${scorePercent}% match) - CampusLoop`;
-  const reasonsText = params.reasons.map((r) => `- ${r}`).join('\n');
-  const reasonsHtml = params.reasons.map((r) => `<li>${r}</li>`).join('');
+  const reasonsText = params.reasons.map((r) => `- ${r}`).join("\n");
+  const reasonsHtml = params.reasons.map((r) => `<li>${r}</li>`).join("");
   const viewUrl = params.matchUrl || env.CLIENT_URL;
 
-  const text = `Hi ${params.userName},\n\nWe found a potential match for your item "${params.itemTitle}"!\n\nMatched Item: "${params.matchTitle}"\nMatch Score: ${scorePercent}%\n\nReasons for match:\n${reasonsText}\n\nView details: ${viewUrl}\n\n— The CampusLoop Team`;
+  const text = `Hi ${params.userName},
+
+We found a potential match for your item "${params.itemTitle}"!
+
+Matched Item: "${params.matchTitle}"
+Match Score: ${scorePercent}%
+
+Reasons for match:
+${reasonsText}
+
+View details: ${viewUrl}
+
+— The CampusLoop Team`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -116,7 +170,13 @@ export async function sendMatchEmail(
     </div>
   `;
 
-  await sendMailHelper({ to: toEmail, subject, text, html, logTag: 'MATCH' });
+  await sendMailHelper({
+    to: toEmail,
+    subject,
+    text,
+    html,
+    logTag: "MATCH",
+  });
 }
 
 /**
@@ -132,13 +192,26 @@ export async function sendRideJoinEmail(
     departureTime?: Date | string;
     availableSeats: number;
     rideUrl?: string;
-  }
+  },
 ): Promise<void> {
-  const subject = `New Passenger Joined Your Ride! - CampusLoop`;
-  const timeStr = params.departureTime ? new Date(params.departureTime).toLocaleString() : 'Scheduled time';
+  const subject = "New Passenger Joined Your Ride! - CampusLoop";
+
+  const timeStr = params.departureTime
+    ? new Date(params.departureTime).toLocaleString()
+    : "Scheduled time";
+
   const viewUrl = params.rideUrl || `${env.CLIENT_URL}/rides`;
 
-  const text = `Hi ${params.creatorName},\n\n${params.passengerName} has joined your ride from "${params.origin}" to "${params.destination}".\nDeparture: ${timeStr}\nSeats remaining: ${params.availableSeats}\n\nView ride: ${viewUrl}\n\n— The CampusLoop Team`;
+  const text = `Hi ${params.creatorName},
+
+${params.passengerName} has joined your ride from "${params.origin}" to "${params.destination}".
+
+Departure: ${timeStr}
+Seats remaining: ${params.availableSeats}
+
+View ride: ${viewUrl}
+
+— The CampusLoop Team`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -160,7 +233,13 @@ export async function sendRideJoinEmail(
     </div>
   `;
 
-  await sendMailHelper({ to: toEmail, subject, text, html, logTag: 'RIDE_JOIN' });
+  await sendMailHelper({
+    to: toEmail,
+    subject,
+    text,
+    html,
+    logTag: "RIDE_JOIN",
+  });
 }
 
 /**
@@ -173,12 +252,20 @@ export async function sendMessageEmail(
     senderName: string;
     messageSnippet: string;
     chatUrl?: string;
-  }
+  },
 ): Promise<void> {
   const subject = `New message from ${params.senderName} - CampusLoop`;
   const viewUrl = params.chatUrl || `${env.CLIENT_URL}/chat`;
 
-  const text = `Hi ${params.recipientName},\n\nYou have a new message from ${params.senderName}:\n\n"${params.messageSnippet}"\n\nReply here: ${viewUrl}\n\n— The CampusLoop Team`;
+  const text = `Hi ${params.recipientName},
+
+You have a new message from ${params.senderName}:
+
+"${params.messageSnippet}"
+
+Reply here: ${viewUrl}
+
+— The CampusLoop Team`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -198,5 +285,11 @@ export async function sendMessageEmail(
     </div>
   `;
 
-  await sendMailHelper({ to: toEmail, subject, text, html, logTag: 'CHAT_MESSAGE' });
+  await sendMailHelper({
+    to: toEmail,
+    subject,
+    text,
+    html,
+    logTag: "CHAT_MESSAGE",
+  });
 }
