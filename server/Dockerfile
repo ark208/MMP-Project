@@ -12,7 +12,6 @@ RUN npm ci --workspace=server
 
 # Copy server source and prisma schema
 COPY server/ ./server/
-COPY docs/ ./docs/
 
 # Generate Prisma Client & compile TypeScript
 WORKDIR /app/server
@@ -38,8 +37,7 @@ RUN npm ci --workspace=server --omit=dev
 # Copy compiled code and prisma schema
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/server/prisma ./server/prisma
-COPY --from=builder /app/server/node_modules/.prisma ./server/node_modules/.prisma
-COPY --from=builder /app/server/node_modules/@prisma ./server/node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 WORKDIR /app/server
 
