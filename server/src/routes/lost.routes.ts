@@ -4,6 +4,8 @@ import { prisma } from '../config/prisma';
 import { authenticate, optionalAuth } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validate';
 import { AppError, sendSuccess } from '../utils/response';
+import { matchingService } from '../services/matching.service';
+import { parsePagination, buildPaginationMeta } from '../utils/pagination';
 
 const router = Router();
 
@@ -35,7 +37,7 @@ export const updateLostStatusSchema = z.object({
 
 /**
  * POST /api/lost
- * Report a lost item (30-day default expiry)
+ * Report a lost item (30-day default expiry) + triggers smart auto-matching
  */
 router.post(
   '/',
@@ -68,6 +70,11 @@ router.post(
         },
       });
 
+      // Trigger smart matching service asynchronously
+      matchingService.matchNewLostItem(lostItem).catch((matchErr) => {
+        console.error('[LostRoutes] Auto-matching failed:', matchErr);
+      });
+
       sendSuccess(res, lostItem, 201);
     } catch (err) {
       next(err);
@@ -77,17 +84,15 @@ router.post(
 
 /**
  * GET /api/lost
- * List lost items with category, status, q filters
+ * List lost items with category, status, q filters and pagination
  */
 router.get(
   '/',
   optionalAuth,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { category, status, q, page = '1', limit = '20' } = req.query as Record<string, string>;
-      const pageNum = Math.max(1, parseInt(page, 10) || 1);
-      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-      const skip = (pageNum - 1) * limitNum;
+      const { category, status, q, paginated } = req.query as Record<string, string>;
+      const { page, limit, skip } = parsePagination(req);
 
       const where: any = {
         isExpired: false,
@@ -110,19 +115,33 @@ router.get(
         ];
       }
 
-      const items = await prisma.lostItem.findMany({
-        where,
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, avatarUrl: true },
+      const [items, total] = await Promise.all([
+        prisma.lostItem.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatarUrl: true },
+            },
           },
-        },
-      });
+        }),
+        prisma.lostItem.count({ where }),
+      ]);
 
-      sendSuccess(res, items);
+      const meta = buildPaginationMeta(total, page, limit);
+
+      res.setHeader('X-Total-Count', total.toString());
+      res.setHeader('X-Total-Pages', meta.totalPages.toString());
+      res.setHeader('X-Current-Page', page.toString());
+      res.setHeader('X-Page-Size', limit.toString());
+
+      if (paginated === 'true') {
+        sendSuccess(res, { items, meta });
+      } else {
+        sendSuccess(res, items);
+      }
     } catch (err) {
       next(err);
     }

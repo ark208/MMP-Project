@@ -160,14 +160,14 @@ router.get(
         const wishlists = await prisma.wishlist.findMany({
           where: {
             userId: req.user.id,
-            listingId: { in: items.map((i) => i.id) },
+            listingId: { in: items.map((i: any) => i.id) },
           },
           select: { listingId: true },
         });
-        wishlistedIds = new Set(wishlists.map((w) => w.listingId));
+        wishlistedIds = new Set(wishlists.map((w: any) => w.listingId));
       }
 
-      const formatted = items.map((item) => ({
+      const formatted = items.map((item: any) => ({
         ...item,
         isWishlisted: wishlistedIds.has(item.id),
       }));

@@ -422,6 +422,135 @@ Updates status of a found item (`open`, `reunited`). Only the finder or admin ca
   }
   ```
 
+#### `GET /api/matches`
+Lists automated matches between lost and found items for the authenticated user. Supports pagination and filtering by match status. Response headers include `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`, and `X-Page-Size`.
+- **Auth**: Required
+- **Query Params**: `?status=PENDING&page=1&limit=10&paginated=true`
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": [
+      {
+        "id": "match_001",
+        "lostItemId": "lost_001",
+        "foundItemId": "found_101",
+        "score": 0.82,
+        "reasons": [
+          "Category exact match: Electronics",
+          "High text similarity in title/description (85%)",
+          "Same reported location: Student Union",
+          "Reported within 15 minutes of each other"
+        ],
+        "status": "PENDING",
+        "createdAt": "2026-11-01T15:10:00.000Z",
+        "updatedAt": "2026-11-01T15:10:00.000Z",
+        "lostItem": {
+          "id": "lost_001",
+          "title": "Black AirPods Pro Case",
+          "description": "Lost near Student Union 2nd floor lounge.",
+          "category": "Electronics",
+          "location": "Student Union",
+          "user": {
+            "id": "usr_123",
+            "name": "Jane Doe",
+            "avatarUrl": "https://..."
+          }
+        },
+        "foundItem": {
+          "id": "found_101",
+          "title": "AirPods case found",
+          "description": "Black casing found under table.",
+          "category": "Electronics",
+          "location": "Student Union",
+          "holdingLocation": "security office",
+          "secretQuestion": "What cartoon sticker is on the back of the case?",
+          "user": {
+            "id": "usr_999",
+            "name": "Sam Chen",
+            "avatarUrl": "https://..."
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/matches/:id`
+Retrieves a specific match with side-by-side lost and found item comparison. Only the owner of the lost item, owner of the found item, or an admin can view. Finder's secret answer is never exposed.
+- **Auth**: Required
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "id": "match_001",
+      "lostItemId": "lost_001",
+      "foundItemId": "found_101",
+      "score": 0.82,
+      "reasons": [
+        "Category exact match: Electronics",
+        "High text similarity in title/description (85%)",
+        "Same reported location: Student Union",
+        "Reported within 15 minutes of each other"
+      ],
+      "status": "PENDING",
+      "createdAt": "2026-11-01T15:10:00.000Z",
+      "updatedAt": "2026-11-01T15:10:00.000Z",
+      "lostItem": {
+        "id": "lost_001",
+        "title": "Black AirPods Pro Case",
+        "description": "Lost near Student Union 2nd floor lounge.",
+        "category": "Electronics",
+        "location": "Student Union",
+        "user": {
+          "id": "usr_123",
+          "name": "Jane Doe",
+          "avatarUrl": "https://..."
+        }
+      },
+      "foundItem": {
+        "id": "found_101",
+        "title": "AirPods case found",
+        "description": "Black casing found under table.",
+        "category": "Electronics",
+        "location": "Student Union",
+        "holdingLocation": "security office",
+        "secretQuestion": "What cartoon sticker is on the back of the case?",
+        "user": {
+          "id": "usr_999",
+          "name": "Sam Chen",
+          "avatarUrl": "https://..."
+        }
+      }
+    }
+  }
+  ```
+
+#### `PATCH /api/matches/:id/status`
+Updates status of a match (`PENDING`, `ACCEPTED`, `DISMISSED`). Only the lost item owner, found item owner, or an admin can update.
+- **Auth**: Required
+- **Request Body**:
+  ```json
+  {
+    "status": "ACCEPTED"
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "id": "match_001",
+      "lostItemId": "lost_001",
+      "foundItemId": "found_101",
+      "score": 0.82,
+      "reasons": [
+        "Category exact match: Electronics"
+      ],
+      "status": "ACCEPTED",
+      "updatedAt": "2026-11-01T15:30:00.000Z"
+    }
+  }
+  ```
+
 ---
 
 ### 3.4 Module: Campus Marketplace
@@ -1007,6 +1136,52 @@ Marks a notification as read.
   }
   ```
 
+#### `GET /api/notifications/preferences`
+Fetches notification delivery preferences (Email / WhatsApp per channel) for current user.
+- **Auth**: Required
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "userId": "usr_123",
+      "emailMatches": true,
+      "emailRideJoins": true,
+      "emailMessages": true,
+      "whatsappMatches": false,
+      "whatsappRideJoins": false,
+      "whatsappMessages": false,
+      "whatsappNumber": "+1234567890"
+    }
+  }
+  ```
+
+#### `PATCH /api/notifications/preferences`
+Updates notification delivery preferences.
+- **Auth**: Required
+- **Request Body**:
+  ```json
+  {
+    "emailMatches": false,
+    "whatsappMatches": true,
+    "whatsappNumber": "+1234567890"
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "userId": "usr_123",
+      "emailMatches": false,
+      "emailRideJoins": true,
+      "emailMessages": true,
+      "whatsappMatches": true,
+      "whatsappRideJoins": false,
+      "whatsappMessages": false,
+      "whatsappNumber": "+1234567890"
+    }
+  }
+  ```
+
 ---
 
 ### 3.9 Reports & Admin Panel
@@ -1099,6 +1274,28 @@ Bans or unbans a user account from the platform.
       "id": "usr_999",
       "isBanned": true,
       "updatedAt": "2026-11-01T16:30:00.000Z"
+    }
+  }
+  ```
+
+#### `GET /api/admin/analytics`
+Fetches high-level operational statistics and activity metrics across the platform.
+- **Auth**: Required (Admin only)
+- **Response `200 OK`**:
+  ```json
+  {
+    "data": {
+      "itemsReunited": 14,
+      "ridesCompleted": 28,
+      "activeListings": 52,
+      "reportsPending": 3,
+      "breakdown": {
+        "lostItemsReunited": 6,
+        "foundItemsReunited": 8,
+        "totalUsers": 145,
+        "activeRides": 11,
+        "totalMatches": 19
+      }
     }
   }
   ```

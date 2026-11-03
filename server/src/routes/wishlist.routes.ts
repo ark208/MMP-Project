@@ -29,7 +29,7 @@ router.get(
         orderBy: { createdAt: 'desc' },
       });
 
-      const items = wishlists.map((w) => ({
+      const items = wishlists.map((w: any) => ({
         ...w.listing,
         isWishlisted: true,
       }));

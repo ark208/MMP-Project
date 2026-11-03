@@ -338,3 +338,50 @@ export interface ClientToServerEvents {
   'ride:unsubscribe': (rideId: string) => void;
 }
 
+
+// -------------------------------------------------------------------------
+// Phase 3: Smart Matching, Preferences & Admin Analytics
+// -------------------------------------------------------------------------
+
+export type MatchStatus = 'PENDING' | 'ACCEPTED' | 'DISMISSED';
+
+export interface Match {
+  id: string;
+  lostItemId: string;
+  lostItem?: LostItem;
+  foundItemId: string;
+  foundItem?: FoundItem;
+  score: number;
+  reasons: string[];
+  status: MatchStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  emailMatches: boolean;
+  emailRideJoins: boolean;
+  emailMessages: boolean;
+  whatsappMatches: boolean;
+  whatsappRideJoins: boolean;
+  whatsappMessages: boolean;
+  whatsappNumber?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAnalytics {
+  itemsReunited: number;
+  ridesCompleted: number;
+  activeListings: number;
+  reportsPending: number;
+  breakdown?: {
+    lostItemsReunited: number;
+    foundItemsReunited: number;
+    totalUsers: number;
+    activeRides: number;
+    totalMatches: number;
+  };
+}
