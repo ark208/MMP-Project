@@ -1,8 +1,8 @@
-'use client';
+﻿"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Train,
   Calendar,
@@ -17,12 +17,12 @@ import {
   ArrowRight,
   Info,
   CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { tripsApi, chatApi } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/lib/toast-context';
-import type { TrainTrip, TrainBuddyMatch } from '@docs/types';
+  AlertCircle,
+} from "lucide-react";
+import { tripsApi, chatApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
+import type { TrainTrip, TrainBuddyMatch } from "@docs/types";
 
 export default function TrainBuddyPage() {
   const router = useRouter();
@@ -37,13 +37,13 @@ export default function TrainBuddyPage() {
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Form State
-  const [trainNumber, setTrainNumber] = useState('');
-  const [trainName, setTrainName] = useState('');
-  const [fromStation, setFromStation] = useState('');
-  const [toStation, setToStation] = useState('');
-  const [date, setDate] = useState('');
-  const [departureTime, setDepartureTime] = useState('16:00');
-  const [notes, setNotes] = useState('');
+  const [trainNumber, setTrainNumber] = useState("");
+  const [trainName, setTrainName] = useState("");
+  const [fromStation, setFromStation] = useState("");
+  const [toStation, setToStation] = useState("");
+  const [date, setDate] = useState("");
+  const [departureTime, setDepartureTime] = useState("16:00");
+  const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch my trips
@@ -60,7 +60,7 @@ export default function TrainBuddyPage() {
         handleSelectTrip(data[0]);
       }
     } catch (err: any) {
-      console.error('Failed to load trips:', err);
+      console.error("Failed to load trips:", err);
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function TrainBuddyPage() {
       const matchData = await tripsApi.getBuddies(trip.id);
       setBuddies(matchData);
     } catch (err) {
-      console.error('Failed to fetch buddies:', err);
+      console.error("Failed to fetch buddies:", err);
     } finally {
       setSearchingBuddies(false);
     }
@@ -82,7 +82,9 @@ export default function TrainBuddyPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!trainNumber || !fromStation || !toStation || !date) {
-      toast.error('Please fill in train number, origin, destination, and departure date.');
+      toast.error(
+        "Please fill in train number, origin, destination, and departure date.",
+      );
       return;
     }
 
@@ -98,15 +100,17 @@ export default function TrainBuddyPage() {
         notes: notes.trim() || undefined,
       });
 
-      toast.success(`Train #${newTrip.trainNumber} posted! Radar scanning for fellow students.`);
+      toast.success(
+        `Train #${newTrip.trainNumber} posted! Radar scanning for fellow students.`,
+      );
 
       // Reset form
-      setTrainNumber('');
-      setTrainName('');
-      setFromStation('');
-      setToStation('');
-      setDate('');
-      setNotes('');
+      setTrainNumber("");
+      setTrainName("");
+      setFromStation("");
+      setToStation("");
+      setDate("");
+      setNotes("");
       setShowAddForm(false);
 
       // Reload
@@ -114,7 +118,7 @@ export default function TrainBuddyPage() {
       setTrips(updated);
       handleSelectTrip(newTrip);
     } catch (err: any) {
-      toast.error(err.message || 'Could not register your train journey.');
+      toast.error(err.message || "Could not register your train journey.");
     } finally {
       setSubmitting(false);
     }
@@ -123,7 +127,7 @@ export default function TrainBuddyPage() {
   async function handleDelete(tripId: string) {
     try {
       await tripsApi.delete(tripId);
-      toast.info('Your train journey has been removed from radar.');
+      toast.info("Your train journey has been removed from radar.");
       const updated = await tripsApi.getMine();
       setTrips(updated);
       if (selectedTrip?.id === tripId) {
@@ -135,7 +139,7 @@ export default function TrainBuddyPage() {
         }
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete trip.');
+      toast.error(err.message || "Failed to delete trip.");
     }
   }
 
@@ -145,14 +149,14 @@ export default function TrainBuddyPage() {
       toast.success(`Starting direct conversation with ${recipientName}.`);
       router.push(`/chat?id=${conv.id}`);
     } catch (err: any) {
-      toast.error(err.message || 'Error creating chat session.');
+      toast.error(err.message || "Error creating chat session.");
     }
   }
 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-xl shadow-teal-500/10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-[#A94B32] via-[#B9573B] to-[#D5866C] text-white shadow-xl shadow-[#B9573B]/10">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold">
             <Train className="w-4 h-4" />
@@ -161,26 +165,32 @@ export default function TrainBuddyPage() {
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             Find Batchmates on Your Train
           </h1>
-          <p className="text-sm text-teal-100 max-w-xl">
-            Never travel alone. Discover fellow campus students booked on the same train, route, and date to share auto-rickshaws, chai, and company!
+          <p className="text-sm text-[#FCE7DF] max-w-xl">
+            Never travel alone. Discover fellow campus students booked on the
+            same train, route, and date to share auto-rickshaws, chai, and
+            company!
           </p>
         </div>
 
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="self-start md:self-center flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-teal-900 font-bold text-sm shadow-md hover:bg-teal-50 hover:scale-105 active:scale-95 transition-all shrink-0"
+          className="self-start md:self-center flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-[#242424] font-bold text-sm shadow-md hover:bg-[#FAF0EB] hover:scale-105 active:scale-95 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>{showAddForm ? 'Close Form' : 'Post My Train Trip'}</span>
+          <span>{showAddForm ? "Close Form" : "Post My Train Trip"}</span>
         </button>
       </div>
 
       {/* Strict Privacy Notice Required by Contract */}
-      <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-[#FDF4F1] dark:bg-[#2a1410]/40 border border-[#E8DED5] dark:border-[#B9573B]/40 text-[#5a2010] dark:text-[#e8b5a3]">
+        <ShieldCheck className="w-5 h-5 text-[#B9573B] dark:text-[#d4795c] shrink-0 mt-0.5" />
         <div className="text-xs sm:text-sm leading-relaxed">
-          <strong className="font-bold">Strict Privacy Guaranteed:</strong> Your PNR and seat number are <span className="underline font-bold">never stored</span> or requested.
-          Buddy Radar only matches on public journey parameters (Train #, Date, and Route). Contact details like phone and email remain private.
+          <strong className="font-bold">Strict Privacy Guaranteed:</strong> Your
+          PNR and seat number are{" "}
+          <span className="underline font-bold">never stored</span> or
+          requested. Buddy Radar only matches on public journey parameters
+          (Train #, Date, and Route). Contact details like phone and email
+          remain private.
         </div>
       </div>
 
@@ -189,10 +199,12 @@ export default function TrainBuddyPage() {
         <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4">
           <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
             <h2 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
-              <Train className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <Train className="w-5 h-5 text-[#B9573B] dark:text-[#B9573B]" />
               <span>Post Your Train Journey</span>
             </h2>
-            <span className="text-xs text-neutral-500">All fields required except notes</span>
+            <span className="text-xs text-neutral-500">
+              All fields required except notes
+            </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -206,7 +218,7 @@ export default function TrainBuddyPage() {
                   placeholder="e.g. 12951"
                   value={trainNumber}
                   onChange={(e) => setTrainNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                   required
                 />
               </div>
@@ -220,7 +232,7 @@ export default function TrainBuddyPage() {
                   placeholder="e.g. Mumbai Rajdhani"
                   value={trainName}
                   onChange={(e) => setTrainName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                 />
               </div>
 
@@ -233,7 +245,7 @@ export default function TrainBuddyPage() {
                   placeholder="e.g. NDLS (New Delhi)"
                   value={fromStation}
                   onChange={(e) => setFromStation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                   required
                 />
               </div>
@@ -247,7 +259,7 @@ export default function TrainBuddyPage() {
                   placeholder="e.g. BCT (Mumbai Central)"
                   value={toStation}
                   onChange={(e) => setToStation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                   required
                 />
               </div>
@@ -260,7 +272,7 @@ export default function TrainBuddyPage() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                   required
                 />
               </div>
@@ -273,7 +285,7 @@ export default function TrainBuddyPage() {
                   type="time"
                   value={departureTime}
                   onChange={(e) => setDepartureTime(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                 />
               </div>
             </div>
@@ -287,7 +299,7 @@ export default function TrainBuddyPage() {
                 placeholder="e.g. Traveling in 3AC, carrying guitar and 1 large bag"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
               />
             </div>
 
@@ -302,9 +314,9 @@ export default function TrainBuddyPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold shadow-md disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white text-sm font-bold shadow-md disabled:opacity-50"
               >
-                {submitting ? 'Registering...' : 'Activate Radar'}
+                {submitting ? "Registering..." : "Activate Radar"}
               </button>
             </div>
           </form>
@@ -318,7 +330,7 @@ export default function TrainBuddyPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
               <span>My Active Journeys</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-semibold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#F8E9E3] dark:bg-[#34241E]/60 text-[#B9573B] dark:text-[#B9573B] font-semibold">
                 {trips.length}
               </span>
             </h2>
@@ -330,16 +342,19 @@ export default function TrainBuddyPage() {
             </div>
           ) : trips.length === 0 ? (
             <div className="p-8 text-center bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 mx-auto flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E]/60 text-[#B9573B] dark:text-[#B9573B] mx-auto flex items-center justify-center">
                 <Train className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">No Upcoming Trips Posted</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">
+                No Upcoming Trips Posted
+              </h3>
               <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                Post your upcoming train details to discover fellow students traveling with you.
+                Post your upcoming train details to discover fellow students
+                traveling with you.
               </p>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700"
+                className="px-4 py-2 rounded-xl bg-[#B9573B] text-white text-xs font-bold hover:bg-[#a34e34]"
               >
                 + Post Your First Trip
               </button>
@@ -354,13 +369,13 @@ export default function TrainBuddyPage() {
                     onClick={() => handleSelectTrip(trip)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                       isSelected
-                        ? 'bg-teal-50/60 dark:bg-teal-950/30 border-teal-500 ring-1 ring-teal-500'
-                        : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        ? "bg-[#FAF0EB]/60 dark:bg-[#34241E]/30 border-[#B9573B] ring-1 ring-[#B9573B]"
+                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-xs">
+                        <div className="w-9 h-9 rounded-xl bg-[#F8E9E3] dark:bg-[#34241E]/80 text-[#B9573B] dark:text-[#B9573B] flex items-center justify-center font-bold text-xs">
                           #{trip.trainNumber}
                         </div>
                         <div>
@@ -369,7 +384,9 @@ export default function TrainBuddyPage() {
                           </div>
                           <div className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
                             <Calendar className="w-3.5 h-3.5" />
-                            <span>{trip.departureDate || (trip as any).date}</span>
+                            <span>
+                              {trip.departureDate || (trip as any).date}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -388,10 +405,14 @@ export default function TrainBuddyPage() {
 
                     <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
                       <div className="flex items-center gap-1 font-semibold">
-                        <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                        <span>{trip.originStation || (trip as any).fromStation}</span>
+                        <MapPin className="w-3.5 h-3.5 text-[#B9573B] dark:text-[#B9573B]" />
+                        <span>
+                          {trip.originStation || (trip as any).fromStation}
+                        </span>
                         <ArrowRight className="w-3 h-3 text-neutral-400" />
-                        <span>{trip.destinationStation || (trip as any).toStation}</span>
+                        <span>
+                          {trip.destinationStation || (trip as any).toStation}
+                        </span>
                       </div>
 
                       {trip.departureTime && (
@@ -416,24 +437,31 @@ export default function TrainBuddyPage() {
               <div className="p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-[#B9573B] dark:text-[#B9573B] uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Live Radar Scan</span>
                     </div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white mt-1">
-                      {searchingBuddies ? (
-                        'Searching for fellow passengers...'
-                      ) : (
-                        `${buddies.length} student${buddies.length === 1 ? '' : 's'} on your train`
-                      )}
+                      {searchingBuddies
+                        ? "Searching for fellow passengers..."
+                        : `${buddies.length} student${buddies.length === 1 ? "" : "s"} on your train`}
                     </h3>
                     <p className="text-xs text-neutral-500 mt-0.5">
-                      Train #{selectedTrip.trainNumber} ({selectedTrip.originStation || (selectedTrip as any).fromStation} ➔ {selectedTrip.destinationStation || (selectedTrip as any).toStation}) on {selectedTrip.departureDate || (selectedTrip as any).date}
+                      Train #{selectedTrip.trainNumber} (
+                      {selectedTrip.originStation ||
+                        (selectedTrip as any).fromStation}{" "}
+                      ➔{" "}
+                      {selectedTrip.destinationStation ||
+                        (selectedTrip as any).toStation}
+                      ) on{" "}
+                      {selectedTrip.departureDate || (selectedTrip as any).date}
                     </p>
                   </div>
 
-                  <div className="px-3 py-1.5 rounded-2xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-bold">
-                    {buddies.length > 0 ? 'Matches Available' : 'Watching for Buddies'}
+                  <div className="px-3 py-1.5 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E]/60 border border-[#B9573B]/30 dark:border-[#B9573B]/30 text-[#B9573B] dark:text-[#B9573B] text-xs font-bold">
+                    {buddies.length > 0
+                      ? "Matches Available"
+                      : "Watching for Buddies"}
                   </div>
                 </div>
               </div>
@@ -441,8 +469,11 @@ export default function TrainBuddyPage() {
               {/* Buddy Cards */}
               {searchingBuddies ? (
                 <div className="p-12 text-center text-sm text-neutral-500 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800">
-                  <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <span>Scanning batchmate databases for Train #{selectedTrip.trainNumber}...</span>
+                  <div className="w-10 h-10 border-4 border-[#B9573B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <span>
+                    Scanning batchmate databases for Train #
+                    {selectedTrip.trainNumber}...
+                  </span>
                 </div>
               ) : buddies.length === 0 ? (
                 <div className="p-8 text-center bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 space-y-3">
@@ -453,7 +484,9 @@ export default function TrainBuddyPage() {
                     No Buddies Found Yet
                   </h4>
                   <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                    You are the first student registered on this train. We will notify you instantly via push/chat when another batchmate registers this trip!
+                    You are the first student registered on this train. We will
+                    notify you instantly via push/chat when another batchmate
+                    registers this trip!
                   </p>
                 </div>
               ) : (
@@ -470,27 +503,37 @@ export default function TrainBuddyPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <img
-                              src={buddyUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                              alt={buddyUser?.name || 'Student'}
-                              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-teal-500/20"
+                              src={
+                                buddyUser?.avatarUrl ||
+                                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                              }
+                              alt={buddyUser?.name || "Student"}
+                              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-[#B9573B]/20"
                             />
                             <div>
                               <div className="font-bold text-base text-neutral-900 dark:text-white">
-                                {buddyUser?.name || 'Fellow Student'}
+                                {buddyUser?.name || "Fellow Student"}
                               </div>
                               <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
-                                <span className="font-medium text-teal-700 dark:text-teal-400">
-                                  {(buddyUser as any)?.department || 'Student'}
+                                <span className="font-medium text-[#B9573B] dark:text-[#B9573B]">
+                                  {(buddyUser as any)?.department || "Student"}
                                 </span>
                                 <span>•</span>
-                                <span>{(buddyUser as any)?.year || 'Campus'}</span>
+                                <span>
+                                  {(buddyUser as any)?.year || "Campus"}
+                                </span>
                               </div>
                             </div>
                           </div>
 
                           <button
-                            onClick={() => handleStartChat(matchTrip.userId, buddyUser?.name || 'Student')}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm hover:scale-105 transition-all"
+                            onClick={() =>
+                              handleStartChat(
+                                matchTrip.userId,
+                                buddyUser?.name || "Student",
+                              )
+                            }
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-sm hover:scale-105 transition-all"
                           >
                             <MessageCircle className="w-4 h-4" />
                             <span>Start Chat</span>
@@ -500,12 +543,21 @@ export default function TrainBuddyPage() {
                         {/* Details */}
                         <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 flex flex-wrap items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
-                            <Train className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                            <span>Train #{matchTrip.trainNumber} ({matchTrip.trainName || 'Express'})</span>
+                            <Train className="w-4 h-4 text-[#B9573B] dark:text-[#B9573B]" />
+                            <span>
+                              Train #{matchTrip.trainNumber} (
+                              {matchTrip.trainName || "Express"})
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-2 font-mono text-[11px] text-neutral-500">
-                            <span>{matchTrip.originStation || (matchTrip as any).fromStation} ➔ {matchTrip.destinationStation || (matchTrip as any).toStation}</span>
+                            <span>
+                              {matchTrip.originStation ||
+                                (matchTrip as any).fromStation}{" "}
+                              ➔{" "}
+                              {matchTrip.destinationStation ||
+                                (matchTrip as any).toStation}
+                            </span>
                           </div>
                         </div>
 

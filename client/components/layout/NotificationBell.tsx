@@ -40,13 +40,13 @@ export function NotificationBell() {
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
       case 'MATCH':
-        return <Train className="w-4 h-4 text-amber-500" />;
+        return <Train className="w-4 h-4 text-[#B9573B]" />;
       case 'RIDE':
-        return <Car className="w-4 h-4 text-emerald-500" />;
+        return <Car className="w-4 h-4 text-[#B9573B]" />;
       case 'CHAT':
-        return <MessageSquare className="w-4 h-4 text-blue-500" />;
+        return <MessageSquare className="w-4 h-4 text-[#6698C2]" />;
       default:
-        return <Sparkles className="w-4 h-4 text-purple-500" />;
+        return <Sparkles className="w-4 h-4 text-[#6698C2]" />;
     }
   };
 
@@ -67,13 +67,13 @@ export function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+        className="relative p-2 rounded-full text-[#77716D] dark:text-[#A8A29D] hover:text-[#242424] dark:hover:text-white hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] transition-colors"
         aria-label={`Notifications (${unreadCount} unread)`}
         aria-expanded={isOpen}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-extrabold text-white ring-2 ring-white dark:ring-neutral-900 animate-in zoom-in-50">
+          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#B9573B] px-1 text-[10px] font-extrabold text-white ring-2 ring-white dark:ring-[#1E1B18] animate-in zoom-in-50">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -81,13 +81,13 @@ export function NotificationBell() {
 
       {/* Dropdown Popup */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-[#E8DED5] dark:border-[#332D27] bg-white dark:bg-[#221F1B] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
           {/* Dropdown Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8DED5] dark:border-[#332D27] bg-[#F8F5F0]/60 dark:bg-[#1E1B18]/60">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-neutral-900 dark:text-white">Notifications</span>
+              <span className="font-bold text-sm text-[#242424] dark:text-[#F5F1EB]">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#FAF0EB] dark:bg-[#34241E] text-[#B9573B] dark:text-[#D5866C]">
                   {unreadCount} new
                 </span>
               )}
@@ -95,54 +95,49 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-[#B9573B] hover:text-[#9E452D] flex items-center gap-1 transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                <span>Mark all read</span>
+                <span>Mark all as read</span>
               </button>
             )}
           </div>
 
           {/* List of Recent Notifications */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/60">
+          <div className="divide-y divide-[#E8DED5]/60 dark:divide-[#332D27] max-h-80 overflow-y-auto">
             {recentNotifications.length === 0 ? (
-              <div className="py-8 text-center px-4">
-                <Bell className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
-                <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  You&apos;re all caught up!
-                </p>
-                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
-                  Ride updates, train radar alerts & chats will appear here.
-                </p>
+              <div className="py-8 px-4 text-center space-y-1">
+                <Bell className="w-8 h-8 text-[#77716D]/40 mx-auto" />
+                <p className="text-xs font-semibold text-[#242424] dark:text-[#F5F1EB]">All caught up!</p>
+                <p className="text-[11px] text-[#77716D]">No new notifications right now.</p>
               </div>
             ) : (
-              recentNotifications.map((notif) => (
+              recentNotifications.map((n) => (
                 <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`flex items-start gap-3 p-3.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 cursor-pointer transition-colors ${
-                    !notif.isRead
-                      ? 'bg-emerald-50/40 dark:bg-emerald-950/20'
-                      : 'bg-transparent'
+                  key={n.id}
+                  onClick={() => handleNotificationClick(n)}
+                  className={`p-3.5 flex items-start gap-3 hover:bg-[#F8F5F0] dark:hover:bg-[#2A2521] cursor-pointer transition-colors ${
+                    !n.isRead ? 'bg-[#FAF0EB]/40 dark:bg-[#2C231D]/40' : ''
                   }`}
                 >
-                  <div className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 shrink-0 mt-0.5">
-                    {getNotificationIcon(notif.type)}
+                  <div className="p-2 rounded-xl bg-[#F8F5F0] dark:bg-[#2C2723] shrink-0 mt-0.5">
+                    {getNotificationIcon(n.type)}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-0.5">
                     <div className="flex items-center justify-between gap-1">
-                      <p className={`text-xs truncate ${!notif.isRead ? 'font-bold text-neutral-900 dark:text-white' : 'font-semibold text-neutral-700 dark:text-neutral-300'}`}>
-                        {notif.title}
-                      </p>
-                      {!notif.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <p className="text-xs font-bold text-[#242424] dark:text-[#F5F1EB] truncate">{n.title}</p>
+                      {!n.isRead && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#B9573B] shrink-0" />
                       )}
                     </div>
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2 mt-0.5 leading-relaxed">
-                      {notif.message}
+                    <p className="text-[11px] text-[#77716D] dark:text-[#A8A29D] line-clamp-2 leading-relaxed">
+                      {n.message}
                     </p>
-                    <span className="block text-[10px] text-neutral-400 dark:text-neutral-500 mt-1">
-                      {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="text-[10px] text-[#77716D]/70 block pt-0.5">
+                      {new Date(n.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
                   </div>
                 </div>
@@ -150,12 +145,12 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* Dropdown Footer */}
-          <div className="p-2 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40 text-center">
+          {/* Footer View All */}
+          <div className="p-2.5 border-t border-[#E8DED5] dark:border-[#332D27] bg-[#F8F5F0]/60 dark:bg-[#1E1B18]/60 text-center">
             <Link
               href="/notifications"
               onClick={() => setIsOpen(false)}
-              className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+              className="text-xs font-bold text-[#B9573B] hover:text-[#9E452D] inline-flex items-center gap-1 transition-colors"
             >
               <span>View all notifications</span>
               <ChevronRight className="w-3.5 h-3.5" />

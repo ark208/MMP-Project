@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
@@ -62,14 +62,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               key={t.id}
               className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-3 ${
                 isSuccess
-                  ? 'bg-emerald-50/95 dark:bg-emerald-950/95 border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
+                  ? 'bg-[#FDF4F1]/95 dark:bg-[#2a1410]/95 border-[#E8DED5] dark:border-[#B9573B]/40 text-[#1a0a07] dark:text-[#f5ddd6]'
                   : isError
                   ? 'bg-rose-50/95 dark:bg-rose-950/95 border-rose-200 dark:border-rose-800 text-rose-950 dark:text-rose-100'
                   : 'bg-blue-50/95 dark:bg-blue-950/95 border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100'
               }`}
             >
               <div className="shrink-0 mt-0.5">
-                {isSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
+                {isSuccess && <CheckCircle2 className="w-5 h-5 text-[#B9573B] dark:text-[#d4795c]" />}
                 {isError && <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />}
                 {!isSuccess && !isError && <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
               </div>

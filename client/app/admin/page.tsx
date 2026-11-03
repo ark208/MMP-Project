@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
             href="/"
             className="inline-block text-xs font-semibold text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
           >
-            ← Return to Campus Home
+            â† Return to Campus Home
           </Link>
         </div>
       </div>
@@ -488,7 +488,7 @@ export default function AdminDashboardPage() {
                         {report.reporter?.name || 'Anonymous Student'}
                       </div>
                       <div className="text-[11px] text-neutral-400">
-                        {report.reporter?.email || 'student@campus.edu'}
+                        {report.reporter?.email || 'student@iiitkota.ac.in'}
                       </div>
                     </td>
 

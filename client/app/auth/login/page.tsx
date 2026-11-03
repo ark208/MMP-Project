@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useTransition, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -107,7 +107,7 @@ function LoginContent() {
   };
 
   const fillDemoEmail = () => {
-    setEmailValue('email', 'student@campus.edu', { shouldValidate: true });
+    setEmailValue('email', '2025kucp1031@iiitkota.ac.in', { shouldValidate: true });
   };
 
   const fillDemoOtp = () => {
@@ -117,7 +117,7 @@ function LoginContent() {
   return (
     <div className="max-w-md mx-auto py-8 px-4">
       <div className="text-center mb-8">
-        <div className="inline-flex p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 mb-4 shadow-xs">
+        <div className="inline-flex p-3 rounded-2xl bg-[#F5DDD6] dark:bg-[#2a1410]/80 text-[#B9573B] dark:text-[#d4795c] mb-4 shadow-xs">
           <GraduationCap className="w-8 h-8" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
@@ -137,7 +137,7 @@ function LoginContent() {
             <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/80 flex items-start gap-3">
               <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <div className="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
-                <span className="font-bold">Campus Verification Policy:</span> Only active university email addresses (e.g., student@campus.edu or .ac.in) are permitted to safeguard campus safety and authenticity.
+                <span className="font-bold">Campus Verification Policy:</span> Only active university email addresses (e.g., 2025kucp1031@iiitkota.ac.in or .ac.in) are permitted to safeguard campus safety and authenticity.
               </div>
             </div>
 
@@ -153,9 +153,9 @@ function LoginContent() {
                   <input
                     {...registerEmail('email')}
                     type="email"
-                    placeholder="student@campus.edu"
+                    placeholder="2025kucp1031@iiitkota.ac.in"
                     autoComplete="email"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm font-medium"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all text-sm font-medium"
                   />
                 </div>
                 {emailErrors.email && (
@@ -168,7 +168,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-semibold text-sm shadow-md transition-all disabled:opacity-50"
               >
                 <span>{isPending ? 'Sending Passcode...' : 'Send Verification OTP'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -180,10 +180,10 @@ function LoginContent() {
               <button
                 type="button"
                 onClick={fillDemoEmail}
-                className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium inline-flex items-center gap-1.5"
+                className="text-xs text-[#B9573B] dark:text-[#d4795c] hover:underline font-medium inline-flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Fill Demo Email (student@campus.edu)
+                Fill Demo Email (2025kucp1031@iiitkota.ac.in)
               </button>
             </div>
           </>
@@ -198,7 +198,7 @@ function LoginContent() {
                   <button
                     type="button"
                     onClick={() => setStep('email')}
-                    className="text-xs text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium"
+                    className="text-xs text-neutral-500 hover:text-[#B9573B] dark:hover:text-[#d4795c] font-medium"
                   >
                     Change Email
                   </button>
@@ -212,7 +212,7 @@ function LoginContent() {
                     type="text"
                     maxLength={6}
                     placeholder="123456"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-center tracking-widest text-lg font-bold"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all text-center tracking-widest text-lg font-bold"
                   />
                 </div>
                 {otpErrors.otp && (
@@ -227,7 +227,7 @@ function LoginContent() {
                 <button
                   type="button"
                   onClick={fillDemoOtp}
-                  className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-neutral-900 px-2 py-1 rounded shadow-xs"
+                  className="font-mono font-bold text-[#B9573B] dark:text-[#d4795c] bg-white dark:bg-neutral-900 px-2 py-1 rounded shadow-xs"
                 >
                   123456
                 </button>
@@ -236,7 +236,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-semibold text-sm shadow-md transition-all disabled:opacity-50"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>{isPending ? 'Verifying...' : 'Verify & Enter CampusLoop'}</span>

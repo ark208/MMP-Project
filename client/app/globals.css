@@ -3,23 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --muted-bg: #f1f5f9;
+  --background: #F8F5F0;
+  --foreground: #242424;
+  --sidebar: #F1ECE5;
+  --primary: #B9573B;
+  --primary-hover: #9E452D;
+  --secondary: #6698C2;
+  --card: #FFFFFF;
+  --card-foreground: #242424;
+  --border: #E8DED5;
+  --muted: #77716D;
+  --muted-bg: #EAE3D9;
+  --ring: #B9573B;
 }
 
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --border: #1f2937;
-  --muted: #94a3b8;
-  --muted-bg: #1e293b;
+  --background: #171513;
+  --foreground: #F5F1EB;
+  --sidebar: #1E1B18;
+  --primary: #C76F53;
+  --primary-hover: #D5866C;
+  --secondary: #7BB5DC;
+  --card: #221F1B;
+  --card-foreground: #F5F1EB;
+  --border: #332D27;
+  --muted: #A8A29D;
+  --muted-bg: #2C2723;
+  --ring: #C76F53;
 }
 
 body {
@@ -43,12 +53,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.4);
+  background: rgba(185, 87, 59, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.7);
+  background: rgba(185, 87, 59, 0.5);
 }
 
 /* Skeleton animation */
@@ -64,9 +74,9 @@ body {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(226, 232, 240, 0.6) 25%,
-    rgba(241, 245, 249, 0.9) 37%,
-    rgba(226, 232, 240, 0.6) 63%
+    rgba(232, 222, 213, 0.5) 25%,
+    rgba(248, 245, 240, 0.8) 37%,
+    rgba(232, 222, 213, 0.5) 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -75,10 +85,60 @@ body {
 .dark .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(31, 41, 55, 0.6) 25%,
-    rgba(55, 65, 81, 0.8) 37%,
-    rgba(31, 41, 55, 0.6) 63%
+    rgba(34, 31, 27, 0.6) 25%,
+    rgba(51, 45, 39, 0.8) 37%,
+    rgba(34, 31, 27, 0.6) 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Reusable campus utility styles */
+@layer components {
+  .campus-card {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  .campus-input {
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    color: var(--foreground);
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.15s ease-in-out;
+  }
+
+  .campus-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(185, 87, 59, 0.15);
+  }
+
+  .campus-button-primary {
+    background-color: #B9573B;
+    color: #FFFFFF;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: all 0.15s ease-in-out;
+  }
+
+  .campus-button-primary:hover {
+    background-color: #9E452D;
+  }
+
+  .campus-button-secondary {
+    background-color: #6698C2;
+    color: #FFFFFF;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: all 0.15s ease-in-out;
+  }
+
+  .campus-button-secondary:hover {
+    background-color: #4E7FA8;
+  }
 }

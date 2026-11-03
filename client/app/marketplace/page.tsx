@@ -122,7 +122,7 @@ export default function MarketplacePage() {
 
           <Link
             href="/marketplace/create"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white text-xs sm:text-sm font-bold shadow-md transition-all"
           >
             <PlusCircle className="w-4 h-4" />
             <span>+ Sell Item</span>
@@ -146,7 +146,7 @@ export default function MarketplacePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search listings (e.g. Calculus, Desk Chair, iPad, Mouse)..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all shadow-xs"
             />
           </div>
 
@@ -154,7 +154,7 @@ export default function MarketplacePage() {
             onClick={() => setShowFiltersModal(!showFiltersModal)}
             className={`px-3.5 py-2.5 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition-colors ${
               minPrice || maxPrice || selectedCondition !== 'ALL'
-                ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                ? 'border-[#B9573B] bg-[#FDF4F1] dark:bg-[#2a1410]/60 text-[#B9573B] dark:text-[#d4795c]'
                 : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200'
             }`}
           >
@@ -199,7 +199,7 @@ export default function MarketplacePage() {
                       onClick={() => setSelectedCondition(cond)}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                         selectedCondition === cond
-                          ? 'bg-emerald-600 text-white font-bold'
+                          ? 'bg-[#B9573B] text-white font-bold'
                           : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200'
                       }`}
                     >
@@ -225,7 +225,7 @@ export default function MarketplacePage() {
                       placeholder="Min"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
-                      className="w-full pl-6 pr-3 py-1.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="w-full pl-6 pr-3 py-1.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 focus:outline-none focus:ring-1 focus:ring-[#B9573B]"
                     />
                   </div>
                   <span className="text-neutral-400 text-xs">to</span>
@@ -239,7 +239,7 @@ export default function MarketplacePage() {
                       placeholder="Max"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
-                      className="w-full pl-6 pr-3 py-1.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="w-full pl-6 pr-3 py-1.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 focus:outline-none focus:ring-1 focus:ring-[#B9573B]"
                     />
                   </div>
                   {(minPrice || maxPrice || selectedCondition !== 'ALL') && (
@@ -282,7 +282,7 @@ export default function MarketplacePage() {
             <Link
               key={item.id}
               href={`/marketplace/${item.id}`}
-              className="group flex flex-col rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs hover:shadow-lg transition-all hover:border-emerald-300 dark:hover:border-emerald-700"
+              className="group flex flex-col rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs hover:shadow-lg transition-all hover:border-[#B9573B]/40 dark:hover:border-[#B9573B]/40"
             >
               {/* Image & Wishlist Button */}
               <div className="relative h-48 w-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
@@ -326,7 +326,7 @@ export default function MarketplacePage() {
               {/* Info */}
               <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
                 <div>
-                  <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                  <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 group-hover:text-[#B9573B] dark:group-hover:text-[#d4795c] transition-colors line-clamp-1">
                     {item.title}
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 mt-1 leading-relaxed">

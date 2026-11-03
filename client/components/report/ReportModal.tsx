@@ -85,28 +85,27 @@ export function ReportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-      <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-4 animate-in zoom-in-95">
+      <div className="w-full max-w-md bg-white dark:bg-[#221F1B] rounded-3xl p-6 border border-[#E8DED5] dark:border-[#332D27] shadow-2xl space-y-4 animate-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="flex items-start justify-between pb-3 border-b border-[#E8DED5] dark:border-[#332D27]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+            <div className="p-2.5 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E] text-[#B9573B]">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-neutral-900 dark:text-white">
+              <h3 className="text-base font-black text-[#242424] dark:text-[#F5F1EB]">
                 Report {getTargetLabel()}
               </h3>
               {targetTitle && (
-                <p className="text-xs text-neutral-500 truncate max-w-[220px]">
-                  &quot;{targetTitle}&quot;
+                <p className="text-xs text-[#77716D] dark:text-[#A8A29D] truncate max-w-[220px]">
+                  {targetTitle}
                 </p>
               )}
             </div>
           </div>
           <button
-            type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+            className="p-1 rounded-full text-[#77716D] hover:text-[#242424] dark:hover:text-white transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -114,27 +113,26 @@ export function ReportModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
-              Reason for reporting:
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[#242424] dark:text-[#F5F1EB]">
+              Reason for Report <span className="text-[#B9573B]">*</span>
             </label>
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
               {REPORT_REASONS.map((reason) => (
                 <label
                   key={reason}
                   className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
                     selectedReason === reason
-                      ? 'border-rose-400 dark:border-rose-700 bg-rose-50/50 dark:bg-rose-950/20 font-semibold text-rose-900 dark:text-rose-200 shadow-2xs'
-                      : 'border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300'
+                      ? 'border-[#B9573B] bg-[#FAF0EB]/60 dark:bg-[#34241E]/50 font-bold text-[#242424] dark:text-[#F5F1EB]'
+                      : 'border-[#E8DED5] dark:border-[#332D27] bg-white dark:bg-[#221F1B] text-[#77716D] hover:bg-[#F8F5F0] dark:hover:bg-[#2A2521]'
                   }`}
                 >
                   <input
                     type="radio"
                     name="reportReason"
-                    value={reason}
                     checked={selectedReason === reason}
                     onChange={() => setSelectedReason(reason)}
-                    className="mt-0.5 text-rose-600 focus:ring-rose-500"
+                    className="mt-0.5 text-[#B9573B] focus:ring-[#B9573B]"
                   />
                   <span>{reason}</span>
                 </label>
@@ -143,36 +141,31 @@ export function ReportModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
-              Additional Details (Optional)
+            <label className="text-xs font-bold text-[#242424] dark:text-[#F5F1EB]">
+              Additional Context (Optional)
             </label>
             <textarea
               rows={3}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
-              placeholder="Explain why this content violates community guidelines..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-rose-500 outline-none resize-none text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
+              placeholder="Provide any details to help campus moderators investigate..."
+              className="w-full p-3 rounded-xl border border-[#E8DED5] dark:border-[#332D27] bg-[#F8F5F0]/50 dark:bg-[#1E1B18]/50 text-xs text-[#242424] dark:text-[#F5F1EB] placeholder-[#77716D] focus:outline-none focus:ring-2 focus:ring-[#B9573B]/30 resize-none"
             />
           </div>
 
-          <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-700 text-[11px] text-neutral-500 leading-relaxed">
-            CampusLoop administrators review flagged content. Offending posts will be removed and repeat violators banned.
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+          <div className="pt-2 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              className="px-4 py-2.5 rounded-xl border border-[#E8DED5] dark:border-[#332D27] text-xs font-bold text-[#77716D] hover:bg-[#F8F5F0] dark:hover:bg-[#2A2521] transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#9E452D] text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
             >
               {submitting ? (
                 <>
@@ -192,4 +185,3 @@ export function ReportModal({
     </div>
   );
 }
-

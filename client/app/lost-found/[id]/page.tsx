@@ -182,7 +182,7 @@ export default function LostFoundDetailPage() {
         </p>
         <Link
           href="/lost-found"
-          className="inline-flex px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold"
+          className="inline-flex px-4 py-2 rounded-xl bg-[#B9573B] text-white text-sm font-semibold"
         >
           Back to Lost & Found
         </Link>
@@ -223,7 +223,7 @@ export default function LostFoundDetailPage() {
           <div className="absolute top-4 left-4 flex gap-2">
             <span
               className={`px-3.5 py-1 rounded-full text-xs font-black shadow-lg ${
-                isLost ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+                isLost ? 'bg-rose-600 text-white' : 'bg-[#B9573B] text-white'
               }`}
             >
               {isLost ? 'LOST ITEM' : 'FOUND ITEM'}
@@ -256,7 +256,7 @@ export default function LostFoundDetailPage() {
 
             <div className="flex flex-wrap gap-4 text-xs text-neutral-500 dark:text-neutral-400 pt-1">
               <div className="flex items-center gap-1.5 font-medium">
-                <MapPin className="w-4 h-4 text-emerald-600" />
+                <MapPin className="w-4 h-4 text-[#B9573B]" />
                 <span>{currentItem.location}</span>
               </div>
               <div className="flex items-center gap-1.5 font-medium">
@@ -333,7 +333,7 @@ export default function LostFoundDetailPage() {
                   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'
                 }
                 alt={currentItem.user?.name || 'Campus Student'}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500/30"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-[#B9573B]/30"
               />
               <div>
                 <div className="text-xs font-semibold text-neutral-400">
@@ -356,7 +356,7 @@ export default function LostFoundDetailPage() {
             {!isLost && !isResolved && (
               <button
                 onClick={() => setShowClaimModal(true)}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-sm shadow-md transition-all"
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>Claim This Item</span>
@@ -383,8 +383,8 @@ export default function LostFoundDetailPage() {
             />
 
             {isResolved && (
-              <div className="w-full py-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-center font-bold text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-center gap-2">
-                <PartyPopper className="w-4 h-4 text-emerald-600" />
+              <div className="w-full py-3 px-4 rounded-xl bg-[#FDF4F1] dark:bg-[#2a1410]/60 border border-[#E8DED5] dark:border-[#B9573B]/30 text-center font-bold text-[#77716D] dark:text-[#F5F1EB] text-sm flex items-center justify-center gap-2">
+                <PartyPopper className="w-4 h-4 text-[#B9573B]" />
                 <span>This item has been successfully reunited with its owner!</span>
               </div>
             )}
@@ -400,7 +400,7 @@ export default function LostFoundDetailPage() {
           <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-5 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600">
+                <div className="p-2 rounded-xl bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#B9573B]">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <h3 className="font-extrabold text-lg text-neutral-900 dark:text-white">
@@ -433,7 +433,7 @@ export default function LostFoundDetailPage() {
                   {...registerClaim('answer')}
                   type="text"
                   placeholder="e.g. Stickers on lid: Studio Ghibli Totoro & GitHub Octocat"
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                 />
                 {claimErrors.answer && (
                   <p className="mt-1 text-xs text-rose-500 font-medium">
@@ -450,7 +450,7 @@ export default function LostFoundDetailPage() {
                   {...registerClaim('note')}
                   rows={3}
                   placeholder="Provide additional details (e.g. serial numbers, contents, time of loss, password format)..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                 />
                 {claimErrors.note && (
                   <p className="mt-1 text-xs text-rose-500 font-medium">
@@ -502,7 +502,7 @@ export default function LostFoundDetailPage() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md disabled:opacity-50"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white text-sm font-bold shadow-md disabled:opacity-50"
                 >
                   {isPending ? 'Submitting...' : 'Submit Claim'}
                 </button>
@@ -529,7 +529,7 @@ export default function LostFoundDetailPage() {
             </p>
             <button
               onClick={() => setShowReunitedModal(false)}
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md transition-all"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white text-sm font-bold shadow-md transition-all"
             >
               Celebrate & Close
             </button>

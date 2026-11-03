@@ -7,7 +7,7 @@ interface SkeletonProps {
 export function Skeleton({ className = '' }: SkeletonProps) {
   return (
     <div
-      className={`skeleton-shimmer rounded-lg bg-neutral-200/70 dark:bg-neutral-800/70 ${className}`}
+      className={`skeleton-shimmer rounded-lg bg-[#E8DED5]/50 dark:bg-[#2C2723]/60 ${className}`}
       aria-hidden="true"
     />
   );
@@ -15,7 +15,7 @@ export function Skeleton({ className = '' }: SkeletonProps) {
 
 export function ItemCardSkeleton() {
   return (
-    <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs space-y-3">
+    <div className="p-4 rounded-2xl border border-[#E8DED5] dark:border-[#332D27] bg-white dark:bg-[#221F1B] shadow-xs space-y-3">
       <Skeleton className="w-full h-44 rounded-xl" />
       <div className="space-y-2">
         <div className="flex justify-between items-center">
@@ -26,7 +26,7 @@ export function ItemCardSkeleton() {
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
       </div>
-      <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
+      <div className="pt-2 border-t border-[#E8DED5]/60 dark:border-[#332D27] flex justify-between items-center">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-8 w-20 rounded-lg" />
       </div>

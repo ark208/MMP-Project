@@ -172,15 +172,15 @@ function TrainBuddyContent() {
         {/* ============================================================== */}
         {/* PRIVACY ASSURANCE NOTE (MANDATORY REQUIREMENT) */}
         {/* ============================================================== */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-emerald-50/90 dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-emerald-950/40 text-emerald-950 dark:text-emerald-100 shadow-xs flex items-start gap-3.5">
-          <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 mt-0.5">
+        <div className="p-4 sm:p-5 rounded-2xl border border-[#E8DED5] dark:border-[#B9573B]/30 bg-[#FDF4F1]/90 dark:bg-[#2a1410]/40 text-[#242424] dark:text-[#F5F1EB] shadow-xs flex items-start gap-3.5">
+          <div className="p-2 rounded-xl bg-[#B9573B] text-white shrink-0 mt-0.5">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-bold text-sm tracking-tight text-emerald-900 dark:text-emerald-300">
+            <h3 className="font-bold text-sm tracking-tight text-[#242424] dark:text-[#F5F1EB]">
               Your PNR and seat number are never stored.
             </h3>
-            <p className="text-xs text-emerald-800/90 dark:text-emerald-300/80 leading-relaxed">
+            <p className="text-xs text-[#77716D] dark:text-[#A8A29D] leading-relaxed">
               CampusLoop only matches the public train number, travel date, and station route.
               Your private booking credentials, phone number, and student email are strictly protected and never exposed.
             </p>
@@ -196,7 +196,7 @@ function TrainBuddyContent() {
             <div className="p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
                 <h2 className="font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-emerald-600" />
+                  <Plus className="w-4 h-4 text-[#B9573B]" />
                   <span>Register Upcoming Trip</span>
                 </h2>
                 <span className="text-[11px] font-semibold text-neutral-400">Step 1</span>
@@ -211,21 +211,21 @@ function TrainBuddyContent() {
                   <button
                     type="button"
                     onClick={() => handleQuickPreset('12951', 'Mumbai Rajdhani', 'NDLS', 'BCT')}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-neutral-700 transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FDF4F1] hover:text-[#8f3f27] dark:hover:bg-neutral-700 transition-colors"
                   >
                     12951 Rajdhani (NDLS → BCT)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickPreset('12002', 'Bhopal Shatabdi', 'NDLS', 'BPL')}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-neutral-700 transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FDF4F1] hover:text-[#8f3f27] dark:hover:bg-neutral-700 transition-colors"
                   >
                     12002 Shatabdi (NDLS → BPL)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickPreset('12432', 'Trivandrum Rajdhani', 'NZM', 'TVC')}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-neutral-700 transition-colors"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FDF4F1] hover:text-[#8f3f27] dark:hover:bg-neutral-700 transition-colors"
                   >
                     12432 Rajdhani (NZM → TVC)
                   </button>
@@ -245,7 +245,7 @@ function TrainBuddyContent() {
                       placeholder="e.g. 12951"
                       value={trainNumber}
                       onChange={(e) => setTrainNumber(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                     />
                   </div>
 
@@ -258,7 +258,7 @@ function TrainBuddyContent() {
                       placeholder="e.g. Rajdhani Express"
                       value={trainName}
                       onChange={(e) => setTrainName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                     />
                   </div>
                 </div>
@@ -277,7 +277,7 @@ function TrainBuddyContent() {
                         placeholder="e.g. NDLS"
                         value={fromStation}
                         onChange={(e) => setFromStation(e.target.value.toUpperCase())}
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                       />
                     </div>
                   </div>
@@ -294,7 +294,7 @@ function TrainBuddyContent() {
                         placeholder="e.g. BCT"
                         value={toStation}
                         onChange={(e) => setToStation(e.target.value.toUpperCase())}
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                       />
                     </div>
                   </div>
@@ -313,7 +313,7 @@ function TrainBuddyContent() {
                         required
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                       />
                     </div>
                   </div>
@@ -328,7 +328,7 @@ function TrainBuddyContent() {
                         type="time"
                         value={departureTime}
                         onChange={(e) => setDepartureTime(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                       />
                     </div>
                   </div>
@@ -337,7 +337,7 @@ function TrainBuddyContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-sm shadow-md transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Train className="w-4 h-4" />
                   <span>{loading ? 'Registering...' : 'Find Train Buddies'}</span>
@@ -368,7 +368,7 @@ function TrainBuddyContent() {
                         onClick={() => handleSelectTrip(trip)}
                         className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition-all ${
                           isSelected
-                            ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-xs'
+                            ? 'border-[#B9573B] bg-[#FDF4F1]/40 dark:bg-[#2a1410]/30 shadow-xs'
                             : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300'
                         }`}
                       >
@@ -384,11 +384,11 @@ function TrainBuddyContent() {
                             )}
                           </div>
                           <div className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-bold text-[#B9573B] dark:text-[#d4795c]">
                               {trip.fromStation || trip.originStation}
                             </span>
                             <span>&rarr;</span>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-bold text-[#B9573B] dark:text-[#d4795c]">
                               {trip.toStation || trip.destinationStation}
                             </span>
                             <span>•</span>
@@ -482,13 +482,13 @@ function TrainBuddyContent() {
                                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${peerName}`
                               }
                               alt={peerName}
-                              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-emerald-500/20 shrink-0"
+                              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-[#B9573B]/20 shrink-0"
                             />
                             <div className="min-w-0">
                               <h4 className="font-extrabold text-base text-neutral-900 dark:text-white truncate">
                                 {peerName}
                               </h4>
-                              <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+                              <div className="text-xs font-semibold text-[#B9573B] dark:text-[#d4795c] truncate">
                                 {peerDept}
                               </div>
                               <div className="text-[11px] text-neutral-400 truncate">
@@ -507,7 +507,7 @@ function TrainBuddyContent() {
 
                             {/* Privacy Note Badge on Peer Card */}
                             <div className="text-[10px] text-neutral-400 bg-neutral-50 dark:bg-neutral-800/50 p-2 rounded-xl flex items-center gap-1.5">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-[#B9573B] shrink-0" />
                               <span>Contact details protected</span>
                             </div>
 

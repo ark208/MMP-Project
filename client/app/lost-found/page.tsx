@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -116,14 +116,14 @@ function LostFoundContent() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/lost-found/report-lost"
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm shadow-sm transition-all"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary)] text-white font-semibold text-xs sm:text-sm shadow-sm transition-all"
           >
             <HelpCircle className="w-4 h-4" />
             <span>Report Lost</span>
           </Link>
           <Link
             href="/lost-found/register-found"
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm shadow-sm transition-all"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[var(--secondary)] hover:bg-[var(--secondary)] text-white font-semibold text-xs sm:text-sm shadow-sm transition-all"
           >
             <CheckCircle className="w-4 h-4" />
             <span>Register Found</span>
@@ -137,7 +137,7 @@ function LostFoundContent() {
           onClick={() => setActiveTab('all')}
           className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all ${
             activeTab === 'all'
-              ? 'border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
+              ? 'border-[#B9573B] text-[#B9573B] dark:border-[#d4795c] dark:text-[#d4795c]'
               : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
           }`}
         >
@@ -147,7 +147,7 @@ function LostFoundContent() {
           onClick={() => setActiveTab('lost')}
           className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all ${
             activeTab === 'lost'
-              ? 'border-rose-600 text-rose-600 dark:border-rose-400 dark:text-rose-400'
+              ? 'border-[#B9573B] text-[#B9573B] dark:border-[#d4795c] dark:text-[#d4795c]'
               : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
           }`}
         >
@@ -157,7 +157,7 @@ function LostFoundContent() {
           onClick={() => setActiveTab('found')}
           className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all ${
             activeTab === 'found'
-              ? 'border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
+              ? 'border-[#B9573B] text-[#B9573B] dark:border-[#d4795c] dark:text-[#d4795c]'
               : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
           }`}
         >
@@ -177,7 +177,7 @@ function LostFoundContent() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by keywords, title, location (e.g. AirPods, Library, Gym)..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all shadow-xs"
           />
         </div>
 
@@ -212,7 +212,7 @@ function LostFoundContent() {
                 onClick={() => setSelectedStatus(stat)}
                 className={`px-3 py-1 rounded-lg whitespace-nowrap font-medium transition-all ${
                   selectedStatus === stat
-                    ? 'bg-emerald-600 text-white font-bold'
+                    ? 'bg-[#B9573B] text-white font-bold'
                     : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
                 }`}
               >
@@ -257,7 +257,7 @@ function LostFoundContent() {
               <Link
                 key={item.id}
                 href={`/lost-found/${item.id}`}
-                className="group flex flex-col rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs hover:shadow-lg transition-all hover:border-emerald-300 dark:hover:border-emerald-700"
+                className="group flex flex-col rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs hover:shadow-lg transition-all hover:border-[#B9573B]/40 dark:hover:border-[#B9573B]/40"
               >
                 {/* Image & Tags */}
                 <div className="relative h-48 w-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
@@ -270,7 +270,7 @@ function LostFoundContent() {
                   <div className="absolute top-3 left-3 flex gap-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-black shadow-md ${
-                        isLost ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+                        isLost ? 'bg-rose-600 text-white' : 'bg-[#6698C2] text-white'
                       }`}
                     >
                       {isLost ? 'LOST' : 'FOUND'}
@@ -297,7 +297,7 @@ function LostFoundContent() {
                 {/* Content */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <h3 className="font-bold text-base text-neutral-900 dark:text-neutral-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                    <h3 className="font-bold text-base text-neutral-900 dark:text-neutral-100 group-hover:text-[#B9573B] transition-colors line-clamp-1">
                       {item.title}
                     </h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 mt-1.5 leading-relaxed">
@@ -307,7 +307,7 @@ function LostFoundContent() {
 
                   <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                     <div className="flex items-center gap-2 truncate">
-                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <MapPin className="w-4 h-4 text-[#B9573B] shrink-0" />
                       <span className="truncate font-medium">{item.location}</span>
                     </div>
 
@@ -329,7 +329,7 @@ function LostFoundContent() {
                           ).toLocaleDateString()}
                         </span>
                       </div>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold group-hover:underline">
+                      <span className="text-[#B9573B] font-semibold group-hover:underline">
                         View details &rarr;
                       </span>
                     </div>

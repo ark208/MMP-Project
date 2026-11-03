@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -37,6 +38,19 @@ const CAMPUS_PICKUP_PRESETS = [
   'Station',
 ];
 
+const RideNavigationMap = dynamic(
+  () => import('@/components/rides/RideNavigationMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[380px] rounded-3xl bg-neutral-100 dark:bg-neutral-900 animate-pulse flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#B9573B] border-t-transparent animate-spin mb-3" />
+        <span className="text-xs font-bold text-neutral-500">Loading interactive campus map...</span>
+      </div>
+    ),
+  }
+);
+
 export default function RidesPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -45,7 +59,7 @@ export default function RidesPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Form State
@@ -272,8 +286,8 @@ export default function RidesPage() {
     switch (status) {
       case 'OPEN':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#8f3f27] dark:text-[#d4795c]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FDF4F1]0 animate-pulse" />
             OPEN
           </span>
         );
@@ -306,11 +320,11 @@ export default function RidesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
+      <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+            <div className="p-2.5 rounded-2xl bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#B9573B] dark:text-[#d4795c]">
               <Car className="w-6 h-6" />
             </div>
             <div>
@@ -325,7 +339,7 @@ export default function RidesPage() {
 
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg self-start sm:self-center"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg self-start sm:self-center"
           >
             {showCreateForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             <span>{showCreateForm ? 'Cancel Offer' : 'Offer a Ride'}</span>
@@ -336,173 +350,189 @@ export default function RidesPage() {
         <SafetyBanner type="rides" defaultExpanded={false} />
 
         {/* ============================================================== */}
-        {/* CREATE RIDE FORM (WITH PRESETS) */}
+        {/* INTERACTIVE NAVIGATION MAP & CREATE RIDE SHARE SECTION */}
         {/* ============================================================== */}
         {showCreateForm && (
-          <div className="p-6 sm:p-7 rounded-3xl border border-emerald-200 dark:border-emerald-900/60 bg-white dark:bg-neutral-900 shadow-xl animate-in slide-in-from-top-4 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
-              <h2 className="font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
-                <Car className="w-4 h-4 text-emerald-600" />
-                <span>Create Campus Ride Share</span>
-              </h2>
-              <span className="text-xs text-neutral-400">Open to verified peers</span>
-            </div>
-
-            <form onSubmit={handleCreateRide} className="space-y-4">
-              {/* Pickup Point Presets (MANDATORY REQUIREMENT) */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                  Campus Pickup Point Presets <span className="text-rose-500">*</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {CAMPUS_PICKUP_PRESETS.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setOrigin(preset)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        origin === preset
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Origin & Destination Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Pickup Location / Specific Gate <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-emerald-600 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Main Gate (or choose preset above)"
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Drop-off Destination <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-rose-500 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Airport Terminal 3"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Date, Time, Total Seats, Estimated Fare */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Departure Date <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={departureDate}
-                    onChange={(e) => setDepartureDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Time <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    required
-                    value={departureTime}
-                    onChange={(e) => setDepartureTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Total Seats <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={totalSeats}
-                    onChange={(e) => setTotalSeats(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    {[2, 3, 4, 5, 6, 7].map((s) => (
-                      <option key={s} value={s}>
-                        {s} seats (You + {s - 1} open)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Estimated Total Fare ($)
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
-                    <input
-                      type="number"
-                      step="0.5"
-                      placeholder="e.g. 80"
-                      value={estimatedFare}
-                      onChange={(e) => setEstimatedFare(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                  Ride Notes & Luggage Allowance
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Leaving promptly at 6 AM. Room for 1 suitcase each."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          <div className="rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden animate-in slide-in-from-top-4">
+            <div className="flex flex-col lg:grid lg:grid-cols-12 min-h-[580px]">
+              {/* LEFT COLUMN (approx 58%): Interactive Navigation Map */}
+              <div className="lg:col-span-7 h-[380px] sm:h-[440px] lg:h-auto min-h-[380px] relative p-3 sm:p-4 bg-neutral-50/70 dark:bg-neutral-950/70 flex flex-col">
+                <RideNavigationMap
+                  originText={origin}
+                  destinationText={destination}
+                  onOriginSelect={(address) => setOrigin(address)}
+                  onDestinationSelect={(address) => setDestination(address)}
+                  className="w-full flex-1 min-h-[350px] lg:min-h-full"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingRide}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
-                >
-                  {submittingRide ? 'Publishing...' : 'Publish Ride'}
-                </button>
+              {/* RIGHT COLUMN (approx 42%): Preserved Create Campus Ride Share Form */}
+              <div className="lg:col-span-5 p-5 sm:p-6 lg:p-7 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-neutral-200 dark:border-neutral-800 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                  <h2 className="font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Car className="w-4 h-4 text-[#B9573B]" />
+                    <span>Create Campus Ride Share</span>
+                  </h2>
+                  <span className="text-xs text-neutral-400">Open to verified peers</span>
+                </div>
+
+                <form onSubmit={handleCreateRide} className="space-y-4">
+                  {/* Campus Pickup Point Presets (MANDATORY REQUIREMENT) */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Campus Pickup Point Presets <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {CAMPUS_PICKUP_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setOrigin(preset)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            origin === preset
+                              ? 'bg-[#B9573B] text-white shadow-xs'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Origin & Destination Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3.5">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Pickup Location / Specific Gate <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 text-[#B9573B] absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Main Gate (or choose preset above)"
+                          value={origin}
+                          onChange={(e) => setOrigin(e.target.value)}
+                          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Drop-off Destination <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 text-rose-500 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Airport Terminal 3"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date, Time, Total Seats, Estimated Fare */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Departure Date <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={departureDate}
+                        onChange={(e) => setDepartureDate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Time <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="time"
+                        required
+                        value={departureTime}
+                        onChange={(e) => setDepartureTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Total Seats <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={totalSeats}
+                        onChange={(e) => setTotalSeats(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                      >
+                        {[2, 3, 4, 5, 6, 7].map((s) => (
+                          <option key={s} value={s}>
+                            {s} seats (You + {s - 1} open)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Estimated Total Fare ($)
+                      </label>
+                      <div className="relative">
+                        <DollarSign className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
+                        <input
+                          type="number"
+                          step="0.5"
+                          placeholder="e.g. 80"
+                          value={estimatedFare}
+                          onChange={(e) => setEstimatedFare(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Ride Notes & Luggage Allowance
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Leaving promptly at 6 AM. Room for 1 suitcase each."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateForm(false)}
+                      className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submittingRide}
+                      className="px-6 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
+                    >
+                      {submittingRide ? 'Publishing...' : 'Publish Ride'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         )}
 
@@ -565,7 +595,7 @@ export default function RidesPage() {
                       {getStatusBadge(ride.status)}
                       <div className="flex items-center gap-2 text-base font-black text-neutral-900 dark:text-white">
                         <span>{ride.origin}</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">&rarr;</span>
+                        <span className="text-[#B9573B] dark:text-[#d4795c]">&rarr;</span>
                         <span>{ride.destination}</span>
                       </div>
                     </div>
@@ -595,7 +625,7 @@ export default function RidesPage() {
                     <div className="space-y-1">
                       <span className="text-neutral-400 font-semibold block text-[11px]">Seat Availability</span>
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-emerald-600" />
+                        <Users className="w-4 h-4 text-[#B9573B]" />
                         <span className="font-bold text-neutral-900 dark:text-white">
                           {ride.availableSeats} of {ride.totalSeats} seats open
                         </span>
@@ -606,7 +636,7 @@ export default function RidesPage() {
                     <div className="space-y-1">
                       <span className="text-neutral-400 font-semibold block text-[11px]">Est. Total Fare</span>
                       <div className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-white">
-                        <span className="text-emerald-600 font-black">${ride.estimatedFare.toFixed(2)}</span>
+                        <span className="text-[#B9573B] font-black">${ride.estimatedFare.toFixed(2)}</span>
                         <span className="text-[11px] text-neutral-400 font-normal">
                           (~${(ride.estimatedFare / Math.max(1, members.length)).toFixed(2)} / person)
                         </span>
@@ -652,7 +682,7 @@ export default function RidesPage() {
                           <div
                             key={m.id || idx}
                             title={m.user?.name || 'Passenger'}
-                            className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white dark:ring-neutral-900"
+                            className="w-7 h-7 rounded-full bg-[#B9573B] text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white dark:ring-neutral-900"
                           >
                             {(m.user?.name || 'P')[0]}
                           </div>
@@ -667,7 +697,7 @@ export default function RidesPage() {
                         onClick={() => openFareSplitter(ride)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors shadow-xs"
                       >
-                        <Calculator className="w-3.5 h-3.5 text-emerald-600" />
+                        <Calculator className="w-3.5 h-3.5 text-[#B9573B]" />
                         <span>Split Fare Live</span>
                       </button>
 
@@ -677,7 +707,7 @@ export default function RidesPage() {
                           <button
                             onClick={() => handleStatusChange(ride.id, 'COMPLETED')}
                             disabled={isActionLoading}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 transition-colors"
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#8f3f27] bg-[#FDF4F1] hover:bg-[#F5DDD6] dark:bg-[#2a1410]/60 dark:text-[#d4795c] transition-colors"
                           >
                             Mark Completed
                           </button>
@@ -700,7 +730,7 @@ export default function RidesPage() {
                             <button
                               onClick={() => handleJoinRide(ride.id)}
                               disabled={ride.availableSeats <= 0 || ride.status !== 'OPEN' || isActionLoading}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-colors"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#B9573B] text-white hover:bg-[#a34e34] disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-colors"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>
@@ -737,7 +767,7 @@ export default function RidesPage() {
             <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-7 border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-5 animate-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                  <div className="p-2 rounded-xl bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#B9573B] dark:text-[#d4795c]">
                     <Calculator className="w-5 h-5" />
                   </div>
                   <div>
@@ -763,7 +793,7 @@ export default function RidesPage() {
                   Enter Total Fare ($ or ₹)
                 </label>
                 <div className="relative">
-                  <DollarSign className="w-5 h-5 text-emerald-600 absolute left-3.5 top-3" />
+                  <DollarSign className="w-5 h-5 text-[#B9573B] absolute left-3.5 top-3" />
                   <input
                     type="number"
                     step="0.01"
@@ -771,7 +801,7 @@ export default function RidesPage() {
                     value={splitTotalFareInput}
                     onChange={(e) => handleLiveFareChange(e.target.value)}
                     placeholder="Enter total cab bill..."
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-lg font-black focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-lg font-black focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                   />
                 </div>
                 <p className="text-[11px] text-neutral-400">
@@ -781,11 +811,11 @@ export default function RidesPage() {
 
               {/* Live Calculation Banner */}
               {fareSplitResult && (
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-200 dark:border-emerald-900/60 text-center space-y-1">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-[#B9573B]/10 via-[#6698C2]/5 to-transparent border border-[#E8DED5] dark:border-[#B9573B]/30 text-center space-y-1">
                   <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
                     Each Person Pays
                   </span>
-                  <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                  <div className="text-3xl font-black text-[#B9573B] dark:text-[#d4795c]">
                     ${fareSplitResult.farePerPerson.toFixed(2)}
                   </div>
                   <span className="text-xs text-neutral-400">
@@ -808,7 +838,7 @@ export default function RidesPage() {
                         className="flex items-center justify-between p-3 text-xs bg-white dark:bg-neutral-900"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#8f3f27] dark:text-[#d4795c] font-bold text-[10px] flex items-center justify-center">
                             {p.name[0]}
                           </div>
                           <span className="font-semibold text-neutral-800 dark:text-neutral-200">

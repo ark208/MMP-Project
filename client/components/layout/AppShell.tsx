@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Search,
@@ -24,194 +24,74 @@ import {
   MessageSquare,
   Bell,
   ShieldAlert,
-} from 'lucide-react';
-import { useTheme } from '@/lib/theme-context';
-import { useAuth } from '@/lib/auth-context';
-import { NotificationBell } from './NotificationBell';
+} from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
+import { useAuth } from "@/lib/auth-context";
+import { NotificationBell } from "./NotificationBell";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
 
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Navigation Items (Phase 1 + Phase 2 + Phase 3 Admin)
+  // Navigation Items (Preserved completely)
   const navItems = [
-    { label: 'Home', href: '/', icon: Home },
-    { label: 'Lost & Found', href: '/lost-found', icon: Search },
-    { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
-    { label: 'Campus Rides', href: '/rides', icon: Car },
-    { label: 'Train Buddy', href: '/train-buddy', icon: Train },
-    { label: 'In-App Chat', href: '/chat', icon: MessageSquare },
-    { label: 'Notifications', href: '/notifications', icon: Bell },
-    { label: 'Wishlist', href: '/marketplace/wishlist', icon: Heart },
-    { label: 'Profile', href: '/profile', icon: User },
-    ...(user?.role === 'ADMIN' ? [{ label: 'Admin Console', href: '/admin', icon: ShieldAlert }] : []),
+    { label: "Home", href: "/", icon: Home },
+    { label: "Lost & Found", href: "/lost-found", icon: Search },
+    { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+    { label: "Trips", href: "/trips", icon: Train },
+    { label: "Campus Rides", href: "/rides", icon: Car },
+    { label: "Train Buddy", href: "/train-buddy", icon: Train },
+    { label: "In-App Chat", href: "/chat", icon: MessageSquare },
+    { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Wishlist", href: "/marketplace/wishlist", icon: Heart },
+    { label: "Profile", href: "/profile", icon: User },
+    ...(user?.role === "ADMIN"
+      ? [{ label: "Admin Console", href: "/admin", icon: ShieldAlert }]
+      : []),
   ];
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
+    if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/lost-found?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const userInitial = user?.name ? user.name[0].toUpperCase() : "N";
+  const userIdentifier = user?.name || "2025kucp1031";
+  const userEmail = user?.email || "2025kucp1031@iiitkota.ac.in";
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 flex flex-col md:flex-row text-neutral-900 dark:text-neutral-100 transition-colors duration-200">
+    <div className="min-h-screen bg-[#F8F5F0] dark:bg-[#171513] flex flex-col md:flex-row text-[#242424] dark:text-[#F5F1EB] transition-colors duration-200">
       {/* ============================================================== */}
-      {/* DESKTOP SIDEBAR */}
+      {/* DESKTOP SIDEBAR (#F1ECE5 background, #E8DED5 border) */}
       {/* ============================================================== */}
-      <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 h-screen p-5 shrink-0 z-30 justify-between">
-        <div className="space-y-5 overflow-y-auto pr-1">
-          {/* Logo, Brand & Controls */}
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5" />
+      <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-[#E8DED5] dark:border-[#332D27] bg-[#F1ECE5] dark:bg-[#1E1B18] sticky top-0 h-screen p-5 shrink-0 z-30 justify-between">
+        <div className="space-y-6 overflow-y-auto pr-1">
+          {/* Logo & Brand Presentation */}
+          <div className="flex items-center justify-between pt-1">
+            <Link href="/" className="flex flex-col group">
+              <div className="text-2xl font-black tracking-tight text-[#242424] dark:text-[#F5F1EB]">
+                Campus<span className="text-[#B9573B]">Loop</span>
               </div>
-              <div>
-                <span className="font-extrabold text-xl tracking-tight">
-                  Campus<span className="text-emerald-600 dark:text-emerald-400">Loop</span>
-                </span>
-                <span className="block text-[9px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
-                  Campus Network
-                </span>
-              </div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#77716D] dark:text-[#A8A29D]">
+                CAMPUS NETWORK
+              </span>
             </Link>
-
-            <div className="flex items-center gap-1">
-              <NotificationBell />
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                aria-label="Toggle color theme"
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-neutral-600" />}
-              </button>
-            </div>
           </div>
 
-          {/* Quick Action Button: + Post or Register */}
-          <div className="relative">
-            <button
-              onClick={() => setShowCreateMenu(!showCreateMenu)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-all hover:shadow-md"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>+ Post or Register</span>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showCreateMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowCreateMenu(false)}
-                />
-                <div className="absolute left-0 right-0 mt-2 p-2 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 animate-in fade-in zoom-in-95 space-y-1">
-                  <Link
-                    href="/rides"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                      <Car className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Offer a Ride</div>
-                      <div className="text-xs text-neutral-500">Cab pool to airport/station</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/train-buddy"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
-                      <Train className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Train Journey</div>
-                      <div className="text-xs text-neutral-500">Find classmates on your train</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/lost-found/report-lost"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
-                      <HelpCircle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Report Lost Item</div>
-                      <div className="text-xs text-neutral-500">I lost something on campus</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/lost-found/register-found"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
-                      <CheckCircle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Register Found Item</div>
-                      <div className="text-xs text-neutral-500">I found someone&apos;s item</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/marketplace/create"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                      <Tag className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Sell on Marketplace</div>
-                      <div className="text-xs text-neutral-500">List books, gear & dorm items</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/trips"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
-                      <Train className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Post Train Journey</div>
-                      <div className="text-xs text-neutral-500">Activate Train Buddy radar</div>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/rides"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-medium transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-                      <Car className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900 dark:text-neutral-100">Offer Ride Share</div>
-                      <div className="text-xs text-neutral-500">Split cab fares to airport/station</div>
-                    </div>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1" aria-label="Desktop Sidebar Navigation">
+          {/* Navigation Links (Preserved completely) */}
+          <nav className="space-y-1.5" aria-label="Desktop Sidebar Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -219,13 +99,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                     active
-                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white'
+                      ? "bg-[#FDF8F6] dark:bg-[#2E241E] text-[#B9573B] font-bold shadow-xs border border-[#F4E0D7] dark:border-[#423228]"
+                      : "text-[#242424] dark:text-[#E2DCD5] hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] font-medium"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
+                  <Icon
+                    className={`w-4 h-4 ${
+                      active
+                        ? "text-[#B9573B]"
+                        : "text-[#77716D] dark:text-[#A8A29D]"
+                    }`}
+                  />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -233,27 +119,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        {/* User Card at bottom of sidebar */}
-        <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        {/* User Card at bottom of sidebar (IIIT Kota format) */}
+        <div className="pt-4 border-t border-[#E8DED5] dark:border-[#332D27]">
           {isAuthenticated && user ? (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-              <Link href="/profile" className="flex items-center gap-2.5 overflow-hidden">
-                <img
-                  src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
-                  alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30 shrink-0"
-                />
-                <div className="truncate">
-                  <div className="text-xs font-bold truncate text-neutral-900 dark:text-white">
-                    {user.name}
+            <div className="flex items-center justify-between p-2 rounded-xl bg-transparent">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2.5 overflow-hidden group"
+              >
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-[#B9573B]/30 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#B9573B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                    {userInitial}
                   </div>
-                  <div className="text-[11px] text-neutral-500 truncate">{user.email}</div>
+                )}
+                <div className="truncate">
+                  <div className="text-xs font-bold truncate text-[#242424] dark:text-[#F5F1EB] group-hover:text-[#B9573B] transition-colors">
+                    {userIdentifier}
+                  </div>
+                  <div className="text-[11px] text-[#77716D] dark:text-[#A8A29D] truncate">
+                    {userEmail}
+                  </div>
                 </div>
               </Link>
               <button
                 onClick={logout}
                 title="Log out"
-                className="p-1.5 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="p-1.5 text-[#77716D] hover:text-[#B9573B] dark:hover:text-[#D5866C] rounded-lg hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -261,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <Link
               href="/auth/login"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-300 dark:border-neutral-700 text-sm font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#E8DED5] dark:border-[#332D27] text-sm font-semibold hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] transition-colors"
             >
               <User className="w-4 h-4" />
               <span>Campus Sign In</span>
@@ -273,40 +170,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ============================================================== */}
       {/* MOBILE TOP HEADER */}
       {/* ============================================================== */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-xs">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <span className="font-extrabold text-lg tracking-tight">
-            Campus<span className="text-emerald-600 dark:text-emerald-400">Loop</span>
+      <header className="md:hidden sticky top-0 z-40 bg-[#F1ECE5]/95 dark:bg-[#1E1B18]/95 backdrop-blur-md border-b border-[#E8DED5] dark:border-[#332D27] px-4 py-3 flex items-center justify-between">
+        <Link href="/" className="flex flex-col">
+          <span className="font-extrabold text-lg tracking-tight text-[#242424] dark:text-[#F5F1EB]">
+            Campus<span className="text-[#B9573B]">Loop</span>
+          </span>
+          <span className="text-[8px] uppercase font-bold tracking-widest text-[#77716D]">
+            CAMPUS NETWORK
           </span>
         </Link>
 
         <div className="flex items-center gap-2">
-          {/* Notification Bell in Mobile Header */}
           <NotificationBell />
 
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-xl text-[#77716D] dark:text-[#A8A29D] hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            {theme === "dark" ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
           </button>
 
           {isAuthenticated && user ? (
             <Link href="/profile">
-              <img
-                src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
-                alt={user.name}
-                className="w-7 h-7 rounded-full object-cover ring-2 ring-emerald-500/30"
-              />
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-[#B9573B]/30"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-[#B9573B] text-white flex items-center justify-center font-bold text-xs">
+                  {userInitial}
+                </div>
+              )}
             </Link>
           ) : (
             <Link
               href="/auth/login"
-              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-600 text-white"
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#B9573B] text-white"
             >
               Sign In
             </Link>
@@ -315,94 +221,180 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ============================================================== */}
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT AREA WITH TOP SEARCH BAR (AS SHOWN IN REFERENCE) */}
       {/* ============================================================== */}
-      <main className="flex-1 flex flex-col min-w-0 pb-24 md:pb-8">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
-          {children}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header Bar for Desktop */}
+        <header className="hidden md:flex items-center justify-between gap-4 px-6 lg:px-8 py-4 bg-transparent border-b border-[#E8DED5] dark:border-[#332D27]">
+          {/* Global Search Bar (From Reference Screenshot) */}
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl">
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#77716D] absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="Search for rides, items, listings..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-full border border-[#E8DED5] dark:border-[#332D27] bg-white dark:bg-[#221F1B] text-sm text-[#242424] dark:text-[#F5F1EB] placeholder-[#77716D] focus:outline-none focus:ring-2 focus:ring-[#B9573B]/30 transition-all shadow-xs"
+              />
+            </div>
+          </form>
+
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-[#77716D] dark:text-[#A8A29D] hover:bg-[#EAE3D9] dark:hover:bg-[#2A2521] transition-colors"
+              aria-label="Toggle color theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-[#77716D]" />
+              )}
+            </button>
+
+            {isAuthenticated && user ? (
+              <Link href="/profile" title={user.name}>
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-[#B9573B]/30"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#B9573B] text-white flex items-center justify-center font-bold text-xs shadow-xs hover:opacity-90 transition-opacity">
+                    {userInitial}
+                  </div>
+                )}
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="text-xs font-bold px-3 py-1.5 rounded-full bg-[#B9573B] text-white hover:bg-[#9E452D] transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 pb-24 md:pb-8">
+          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* ============================================================== */}
       {/* MOBILE BOTTOM TAB BAR */}
       {/* ============================================================== */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-2 py-2 flex items-center justify-around"
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 items-end gap-0 border-t border-[#E8DED5] bg-white/95 px-0.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur-lg dark:border-[#332D27] dark:bg-[#1E1B18]/95"
         aria-label="Mobile Navigation Bar"
       >
         <Link
           href="/"
-          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
-            isActive('/') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/") ? "text-[#B9573B]" : "text-[#77716D]"
           }`}
         >
-          <Home className="w-4 h-4" />
-          <span className="text-[9px] font-semibold">Home</span>
+          <Home className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Home
+          </span>
         </Link>
 
         <Link
           href="/trips"
-          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
-            isActive('/trips') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/trips") ? "text-[#B9573B]" : "text-[#77716D]"
           }`}
         >
-          <Train className="w-4 h-4" />
-          <span className="text-[9px] font-semibold">Trains</span>
+          <Train className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Trains
+          </span>
         </Link>
 
         <Link
           href="/rides"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/rides') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/rides") ? "text-[#B9573B]" : "text-[#77716D]"
           }`}
         >
-          <Car className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Rides</span>
+          <Car className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Rides
+          </span>
         </Link>
 
-        {/* Center Post Button */}
+        {/* Center Post action: same slot height and label baseline as the other tabs */}
         <button
+          type="button"
           onClick={() => setShowCreateMenu(true)}
-          className="flex flex-col items-center justify-center -mt-4"
+          className="flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center text-[#B9573B] transition-colors"
           aria-label="Create new post"
         >
-          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
-            <PlusCircle className="w-5 h-5" />
-          </div>
-          <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">Post</span>
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#B9573B] text-white shadow-sm">
+            <PlusCircle className="h-4 w-4" />
+          </span>
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Post
+          </span>
         </button>
 
         <Link
           href="/chat"
-          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors ${
-            isActive('/chat') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500'
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/chat") ? "text-[#B9573B]" : "text-[#77716D]"
           }`}
         >
-          <MessageSquare className="w-4 h-4" />
-          <span className="text-[9px] font-semibold">Chat</span>
+          <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Chat
+          </span>
         </Link>
 
         <Link
           href="/train-buddy"
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
-            isActive('/train-buddy') ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/train-buddy") ? "text-[#B9573B]" : "text-[#77716D]"
           }`}
         >
-          <Train className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Train</span>
+          <Train className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Trips
+          </span>
         </Link>
 
+        <Link
+          href="/marketplace"
+          className={`flex min-w-0 w-full flex-col items-center justify-end gap-1 rounded-lg py-1.5 text-center transition-colors ${
+            isActive("/marketplace") ? "text-[#B9573B]" : "text-[#77716D]"
+          }`}
+        >
+          <ShoppingBag className="h-4.5 w-4.5 shrink-0" />
+          <span className="w-full truncate text-[8px] font-semibold leading-3">
+            Market
+          </span>
+        </Link>
       </nav>
 
       {/* Mobile Create Post Modal */}
       {showCreateMenu && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full bg-white dark:bg-neutral-900 rounded-t-3xl p-6 border-t border-neutral-200 dark:border-neutral-800 space-y-4 animate-in slide-in-from-bottom-5 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-white">Create Campus Post</h3>
+          <div className="w-full bg-white dark:bg-[#221F1B] rounded-t-3xl p-6 border-t border-[#E8DED5] dark:border-[#332D27] space-y-4 animate-in slide-in-from-bottom-5 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E8DED5] dark:border-[#332D27]">
+              <h3 className="text-base font-bold text-[#242424] dark:text-[#F5F1EB]">
+                Create Campus Post
+              </h3>
               <button
                 onClick={() => setShowCreateMenu(false)}
-                className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                className="p-1.5 rounded-full text-[#77716D] hover:text-[#242424] dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -412,86 +404,106 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 href="/rides"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E] border border-[#F4E0D7] dark:border-[#423228]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white">
+                  <div className="p-2.5 rounded-xl bg-[#B9573B] text-white">
                     <Car className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-emerald-950 dark:text-emerald-100 text-sm">Offer a Campus Ride</div>
-                    <div className="text-xs text-emerald-700/80 dark:text-emerald-300">Pool cabs to airport, stations & city</div>
+                    <div className="font-bold text-[#242424] dark:text-[#F5F1EB] text-sm">
+                      Offer a Campus Ride
+                    </div>
+                    <div className="text-xs text-[#77716D] dark:text-[#A8A29D]">
+                      Pool cabs to airport, stations & city
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-400" />
+                <ChevronRight className="w-4 h-4 text-[#B9573B]" />
               </Link>
 
               <Link
                 href="/train-buddy"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E] border border-[#F4E0D7] dark:border-[#423228]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-amber-600 text-white">
+                  <div className="p-2.5 rounded-xl bg-[#B9573B] text-white">
                     <Train className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-amber-950 dark:text-amber-100 text-sm">Post Train Journey</div>
-                    <div className="text-xs text-amber-700/80 dark:text-amber-300">Find classmates on your train</div>
+                    <div className="font-bold text-[#242424] dark:text-[#F5F1EB] text-sm">
+                      Post Train Journey
+                    </div>
+                    <div className="text-xs text-[#77716D] dark:text-[#A8A29D]">
+                      Find classmates on your train
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-amber-400" />
+                <ChevronRight className="w-4 h-4 text-[#B9573B]" />
               </Link>
 
               <Link
                 href="/lost-found/report-lost"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E] border border-[#F4E0D7] dark:border-[#423228]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-rose-600 text-white">
+                  <div className="p-2.5 rounded-xl bg-[#B9573B] text-white">
                     <HelpCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-rose-950 dark:text-rose-100 text-sm">Report Lost Item</div>
-                    <div className="text-xs text-rose-700/80 dark:text-rose-300">Notify the campus community</div>
+                    <div className="font-bold text-[#242424] dark:text-[#F5F1EB] text-sm">
+                      Report Lost Item
+                    </div>
+                    <div className="text-xs text-[#77716D] dark:text-[#A8A29D]">
+                      I lost something on campus
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-rose-400" />
+                <ChevronRight className="w-4 h-4 text-[#B9573B]" />
               </Link>
 
               <Link
                 href="/lost-found/register-found"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#E0EFF9] dark:bg-[#1E2E3D] border border-[#C2DFF3] dark:border-[#2C4054]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-teal-600 text-white">
+                  <div className="p-2.5 rounded-xl bg-[#6698C2] text-white">
                     <CheckCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-teal-950 dark:text-teal-100 text-sm">Register Found Item</div>
-                    <div className="text-xs text-teal-700/80 dark:text-teal-300">Set secret question & safe custody</div>
+                    <div className="font-bold text-[#242424] dark:text-[#F5F1EB] text-sm">
+                      Register Found Item
+                    </div>
+                    <div className="text-xs text-[#77716D] dark:text-[#A8A29D]">
+                      I found someone&apos;s item
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-teal-400" />
+                <ChevronRight className="w-4 h-4 text-[#6698C2]" />
               </Link>
 
               <Link
                 href="/marketplace/create"
                 onClick={() => setShowCreateMenu(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#E0EFF9] dark:bg-[#1E2E3D] border border-[#C2DFF3] dark:border-[#2C4054]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-600 text-white">
-                    <Tag className="w-4 h-4" />
+                  <div className="p-2.5 rounded-xl bg-[#6698C2] text-white">
+                    <Tag className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-purple-950 dark:text-purple-100 text-sm">Sell on Marketplace</div>
-                    <div className="text-xs text-purple-700/80 dark:text-purple-300">List books, tech & dorm furniture</div>
+                    <div className="font-bold text-[#242424] dark:text-[#F5F1EB] text-sm">
+                      Sell on Marketplace
+                    </div>
+                    <div className="text-xs text-[#77716D] dark:text-[#A8A29D]">
+                      List books, gear & dorm items
+                    </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-purple-400" />
+                <ChevronRight className="w-4 h-4 text-[#6698C2]" />
               </Link>
             </div>
           </div>

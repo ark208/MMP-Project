@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#059669',
+  themeColor: '#B9573B',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -37,7 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased selection:bg-emerald-500 selection:text-white">
+      <body className="antialiased selection:bg-[#B9573B] selection:text-white bg-[#F8F5F0] text-[#242424] dark:bg-[#171513] dark:text-[#F5F1EB]">
         <PwaRegister />
         <ThemeProvider>
           <ToastProvider>

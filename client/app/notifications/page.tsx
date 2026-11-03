@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Link from "next/link";
 import {
   Bell,
   CheckCheck,
@@ -10,37 +10,40 @@ import {
   MessageSquare,
   Sparkles,
   ExternalLink,
-  Filter,
   Check,
   Settings,
-} from 'lucide-react';
-import { useNotifications } from '@/lib/notifications-context';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { EmptyState } from '@/components/ui/EmptyState';
-import type { Notification, NotificationType } from '@docs/types';
+} from "lucide-react";
+import { useNotifications } from "@/lib/notifications-context";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { EmptyState } from "@/components/ui/EmptyState";
+import type { Notification } from "@docs/types";
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotifications();
-  const [filterType, setFilterType] = useState<string>('ALL');
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications();
+  const [filterType, setFilterType] = useState<string>("ALL");
 
   const filteredNotifications = notifications.filter((notif) => {
-    if (filterType === 'UNREAD') return !notif.isRead;
-    if (filterType === 'RIDE') return notif.type === 'RIDE';
-    if (filterType === 'MATCH') return notif.type === 'MATCH';
-    if (filterType === 'CHAT') return notif.type === 'CHAT';
+    if (filterType === "UNREAD") return !notif.isRead;
+    if (filterType === "RIDE") return notif.type === "RIDE";
+    if (filterType === "MATCH") return notif.type === "MATCH";
+    if (filterType === "CHAT") return notif.type === "CHAT";
     return true;
   });
 
   const getIcon = (notif: Notification) => {
     switch (notif.type) {
-      case 'MATCH':
-        if (notif.title.toLowerCase().includes('train') || notif.link?.includes('train')) {
+      case "MATCH":
+        if (
+          notif.title.toLowerCase().includes("train") ||
+          notif.link?.includes("train")
+        ) {
           return <Train className="w-5 h-5 text-amber-500" />;
         }
         return <Sparkles className="w-5 h-5 text-amber-500" />;
-      case 'RIDE':
-        return <Car className="w-5 h-5 text-emerald-500" />;
-      case 'CHAT':
+      case "RIDE":
+        return <Car className="w-5 h-5 text-[#B9573B]" />;
+      case "CHAT":
         return <MessageSquare className="w-5 h-5 text-blue-500" />;
       default:
         return <Sparkles className="w-5 h-5 text-purple-500" />;
@@ -49,8 +52,11 @@ export default function NotificationsPage() {
 
   const getTypeBadge = (notif: Notification) => {
     switch (notif.type) {
-      case 'MATCH':
-        if (notif.title.toLowerCase().includes('train') || notif.link?.includes('train')) {
+      case "MATCH":
+        if (
+          notif.title.toLowerCase().includes("train") ||
+          notif.link?.includes("train")
+        ) {
           return (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">
               TRAIN RADAR
@@ -63,13 +69,13 @@ export default function NotificationsPage() {
             ITEM MATCH
           </span>
         );
-      case 'RIDE':
+      case "RIDE":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FBEFEA] text-[#B9573B]">
             RIDE SHARE
           </span>
         );
-      case 'CHAT':
+      case "CHAT":
         return (
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400">
             IN-APP CHAT
@@ -91,7 +97,7 @@ export default function NotificationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+              <div className="p-2.5 rounded-2xl bg-[#FBEFEA] text-[#B9573B]">
                 <Bell className="w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
@@ -104,7 +110,8 @@ export default function NotificationsPage() {
               )}
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              Real-time updates on your train buddies, ride splits, and peer messages.
+              Real-time updates on your train buddies, ride splits, and peer
+              messages.
             </p>
           </div>
 
@@ -114,7 +121,7 @@ export default function NotificationsPage() {
                 onClick={markAllAsRead}
                 className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors shadow-xs shrink-0"
               >
-                <CheckCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <CheckCheck className="w-4 h-4 text-[#B9573B]" />
                 <span>Mark all as read</span>
               </button>
             )}
@@ -132,19 +139,19 @@ export default function NotificationsPage() {
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'ALL', label: 'All Alerts' },
-            { id: 'UNREAD', label: `Unread (${unreadCount})` },
-            { id: 'RIDE', label: 'Rides' },
-            { id: 'MATCH', label: 'Train Radar' },
-            { id: 'CHAT', label: 'Messages' },
+            { id: "ALL", label: "All Alerts" },
+            { id: "UNREAD", label: `Unread (${unreadCount})` },
+            { id: "RIDE", label: "Rides" },
+            { id: "MATCH", label: "Train Radar" },
+            { id: "CHAT", label: "Messages" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setFilterType(tab.id)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 filterType === tab.id
-                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs"
+                  : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               }`}
             >
               {tab.label}
@@ -156,11 +163,15 @@ export default function NotificationsPage() {
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={Bell}
-            title={filterType === 'UNREAD' ? 'No unread notifications' : 'No notifications found'}
+            title={
+              filterType === "UNREAD"
+                ? "No unread notifications"
+                : "No notifications found"
+            }
             description={
-              filterType === 'UNREAD'
+              filterType === "UNREAD"
                 ? "You've read all your notifications! Check back later for ride and train updates."
-                : 'Join a ride share or post a train journey to receive automated buddy matches.'
+                : "Join a ride share or post a train journey to receive automated buddy matches."
             }
             actionHref="/rides"
             actionLabel="Browse Campus Rides"
@@ -172,8 +183,8 @@ export default function NotificationsPage() {
                 key={notif.id}
                 className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border transition-all ${
                   !notif.isRead
-                    ? 'border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-xs'
-                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'
+                    ? "border-[#E8DED5] dark:border-neutral-700 bg-[#FBEFEA]/40 dark:bg-neutral-800/40 shadow-xs"
+                    : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
                 }`}
               >
                 <div className="flex items-start gap-3.5 min-w-0">
@@ -183,11 +194,13 @@ export default function NotificationsPage() {
                   <div className="space-y-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {getTypeBadge(notif)}
-                      <h3 className={`text-sm tracking-tight ${!notif.isRead ? 'font-bold text-neutral-900 dark:text-white' : 'font-semibold text-neutral-800 dark:text-neutral-200'}`}>
+                      <h3
+                        className={`text-sm tracking-tight ${!notif.isRead ? "font-bold text-neutral-900 dark:text-white" : "font-semibold text-neutral-800 dark:text-neutral-200"}`}
+                      >
                         {notif.title}
                       </h3>
                       {!notif.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-[#B9573B] shrink-0" />
                       )}
                     </div>
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
@@ -195,10 +208,10 @@ export default function NotificationsPage() {
                     </p>
                     <span className="block text-[11px] text-neutral-400 dark:text-neutral-500">
                       {new Date(notif.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   </div>
@@ -209,7 +222,7 @@ export default function NotificationsPage() {
                   {!notif.isRead && (
                     <button
                       onClick={() => markAsRead(notif.id)}
-                      className="p-2 text-xs font-semibold text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
+                      className="p-2 text-xs font-semibold text-neutral-500 hover:text-[#B9573B] hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
                       title="Mark as read"
                     >
                       <Check className="w-4 h-4" />
@@ -217,17 +230,21 @@ export default function NotificationsPage() {
                   )}
                   {notif.link && (
                     <Link
-                      href={notif.type === 'MATCH' && notif.link === '/lost-found' ? '/lost-found/match/match_001' : notif.link}
+                      href={
+                        notif.type === "MATCH" && notif.link === "/lost-found"
+                          ? "/lost-found/match/match_001"
+                          : notif.link
+                      }
                       onClick={() => {
                         if (!notif.isRead) markAsRead(notif.id);
                       }}
                       className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        notif.type === 'MATCH'
-                          ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs hover:scale-[1.02]'
-                          : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600'
+                        notif.type === "MATCH"
+                          ? "bg-amber-500 hover:bg-amber-600 text-white shadow-xs hover:scale-[1.02]"
+                          : "bg-neutral-100 dark:bg-neutral-800 hover:bg-[#A84932] hover:text-white dark:hover:bg-[#A84932]"
                       }`}
                     >
-                      {notif.type === 'MATCH' ? (
+                      {notif.type === "MATCH" ? (
                         <>
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>Review Match</span>

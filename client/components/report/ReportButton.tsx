@@ -31,7 +31,7 @@ export function ReportButton({
           type="button"
           onClick={() => setIsOpen(true)}
           title={`Report this ${targetType.toLowerCase()}`}
-          className={`p-2 rounded-xl text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors ${className}`}
+          className={`p-2 rounded-xl text-[#77716D] hover:text-[#B9573B] hover:bg-[#FAF0EB] dark:hover:bg-[#34241E] transition-colors ${className}`}
         >
           <Flag className="w-4 h-4" />
         </button>
@@ -39,7 +39,7 @@ export function ReportButton({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium transition-colors ${className}`}
+          className={`inline-flex items-center gap-1.5 text-xs text-[#77716D] hover:text-[#B9573B] font-medium transition-colors ${className}`}
         >
           <Flag className="w-3.5 h-3.5" />
           <span>{label}</span>
@@ -48,7 +48,7 @@ export function ReportButton({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-900/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all ${className}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8DED5] dark:border-[#332D27] text-xs font-semibold text-[#77716D] hover:text-[#B9573B] hover:border-[#B9573B]/40 hover:bg-[#FAF0EB]/60 dark:hover:bg-[#34241E]/40 transition-all ${className}`}
         >
           <Flag className="w-3.5 h-3.5" />
           <span>{label}</span>
@@ -65,4 +65,3 @@ export function ReportButton({
     </>
   );
 }
-

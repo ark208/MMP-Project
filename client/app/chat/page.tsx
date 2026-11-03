@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -260,7 +260,7 @@ function ChatContent() {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
               />
             </div>
           </div>
@@ -290,14 +290,14 @@ function ChatContent() {
                     onClick={() => setActiveConvId(conv.id)}
                     className={`w-full text-left flex items-start gap-3 p-4 transition-all ${
                       isSelected
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-l-4 border-emerald-600'
+                        ? 'bg-[#FDF4F1]/70 dark:bg-[#2a1410]/40 border-l-4 border-[#B9573B]'
                         : 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/50'
                     }`}
                   >
                     {/* Avatar */}
                     <div className="relative shrink-0">
                       {info.isGroup ? (
-                        <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                        <div className="w-11 h-11 rounded-2xl bg-[#B9573B] text-white flex items-center justify-center font-bold shadow-xs">
                           <Car className="w-5 h-5" />
                         </div>
                       ) : (
@@ -307,7 +307,7 @@ function ChatContent() {
                             `https://api.dicebear.com/7.x/avataaars/svg?seed=${info.name}`
                           }
                           alt={info.name}
-                          className="w-11 h-11 rounded-2xl object-cover ring-2 ring-emerald-500/20"
+                          className="w-11 h-11 rounded-2xl object-cover ring-2 ring-[#B9573B]/20"
                         />
                       )}
                     </div>
@@ -366,7 +366,7 @@ function ChatContent() {
 
                       <div className="relative shrink-0">
                         {info.isGroup ? (
-                          <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                          <div className="w-10 h-10 rounded-2xl bg-[#B9573B] text-white flex items-center justify-center font-bold shadow-xs">
                             <Car className="w-5 h-5" />
                           </div>
                         ) : (
@@ -376,7 +376,7 @@ function ChatContent() {
                               `https://api.dicebear.com/7.x/avataaars/svg?seed=${info.name}`
                             }
                             alt={info.name}
-                            className="w-10 h-10 rounded-2xl object-cover ring-2 ring-emerald-500/20"
+                            className="w-10 h-10 rounded-2xl object-cover ring-2 ring-[#B9573B]/20"
                           />
                         )}
                       </div>
@@ -390,7 +390,7 @@ function ChatContent() {
                     </div>
 
                     {/* Privacy Indicator Badge (MANDATORY REQUIREMENT: Contact details never exposed) */}
-                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold shrink-0">
+                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF4F1] dark:bg-[#2a1410]/50 border border-[#E8DED5] dark:border-[#B9573B]/30 text-[#8f3f27] dark:text-[#d4795c] text-[11px] font-semibold shrink-0">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>Contact details hidden</span>
                     </div>
@@ -435,7 +435,7 @@ function ChatContent() {
                         <div
                           className={`max-w-[80%] sm:max-w-md px-4 py-2.5 rounded-2xl shadow-xs break-words text-xs sm:text-sm leading-relaxed ${
                             isMe
-                              ? 'bg-emerald-600 text-white rounded-tr-xs'
+                              ? 'bg-[#B9573B] text-white rounded-tr-xs'
                               : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700/80 rounded-tl-xs'
                           }`}
                         >
@@ -466,14 +466,14 @@ function ChatContent() {
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Type a message... (Press Enter to send)"
-                      className="w-full px-4 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none max-h-32 leading-relaxed"
+                      className="w-full px-4 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B9573B] resize-none max-h-32 leading-relaxed"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={!inputText.trim() || sending}
-                    className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:shadow-lg shrink-0"
+                    className="p-3 rounded-2xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:shadow-lg shrink-0"
                     aria-label="Send message"
                   >
                     <Send className="w-4 h-4" />

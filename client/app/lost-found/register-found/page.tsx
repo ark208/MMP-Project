@@ -154,7 +154,7 @@ export default function RegisterFoundPage() {
 
         {/* Page Title */}
         <div className="flex items-start gap-4 mb-8">
-          <div className="p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="p-3 rounded-2xl bg-[#F5DDD6] dark:bg-[#2a1410]/70 text-[#B9573B] dark:text-[#d4795c] shrink-0">
             <CheckCircle className="w-8 h-8" />
           </div>
           <div>
@@ -170,9 +170,9 @@ export default function RegisterFoundPage() {
         {/* Form Card */}
         <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-8 border border-neutral-200 dark:border-neutral-800 shadow-xl space-y-6">
           {/* Tip Banner */}
-          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+          <div className="p-4 rounded-2xl bg-[#FDF4F1]/70 dark:bg-[#2a1410]/40 border border-[#E8DED5] dark:border-[#B9573B]/30/80 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-[#B9573B] dark:text-[#d4795c] shrink-0 mt-0.5" />
+            <div className="text-xs text-[#242424] dark:text-[#F5F1EB] leading-relaxed">
               <span className="font-bold">Anti-Fraud Safeguard:</span> When registering a found item, do not reveal unique stickers, keychain colors, or engravings in the photo/description. Set those as the <span className="font-bold underline">Secret Verification Question</span>.
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function RegisterFoundPage() {
                 {...register('title')}
                 type="text"
                 placeholder="e.g. Silver MacBook Air M2 13-inch"
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
               />
               {errors.title && (
                 <p className="mt-1.5 text-xs text-rose-500 font-medium">{errors.title.message}</p>
@@ -202,7 +202,7 @@ export default function RegisterFoundPage() {
                 </label>
                 <select
                   {...register('category')}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -224,7 +224,7 @@ export default function RegisterFoundPage() {
                 <input
                   {...register('dateFound')}
                   type="date"
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
                 />
                 {errors.dateFound && (
                   <p className="mt-1.5 text-xs text-rose-500 font-medium">
@@ -247,7 +247,7 @@ export default function RegisterFoundPage() {
                   {...register('location')}
                   type="text"
                   placeholder="e.g. Tech Hub 2nd Floor study cubicle"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
                 />
               </div>
               {errors.location && (
@@ -266,7 +266,7 @@ export default function RegisterFoundPage() {
                 {...register('description')}
                 rows={3}
                 placeholder="General description without giving away the secret answer (e.g. 'Found unattended laptop in transparent protective case')."
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
               />
               {errors.description && (
                 <p className="mt-1.5 text-xs text-rose-500 font-medium">
@@ -300,14 +300,14 @@ export default function RegisterFoundPage() {
             {/* Where It's Kept */}
             <div className="space-y-2">
               <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
-                <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <Building2 className="w-4 h-4 text-[#B9573B] dark:text-[#d4795c]" />
                 <span>Where it&apos;s kept / Safe Custody Location *</span>
               </label>
               <input
                 {...register('keptAt')}
                 type="text"
                 placeholder="e.g. Campus Security Central Office - Room 102 or Hostel 3 Warden Desk"
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B9573B] transition-all"
               />
               <p className="text-[11px] text-neutral-500">
                 Let peers know where they can collect the verified item in person.
@@ -335,7 +335,7 @@ export default function RegisterFoundPage() {
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl cursor-pointer bg-neutral-50/50 dark:bg-neutral-800/40 transition-colors">
+                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#B9573B] dark:hover:border-[#B9573B] rounded-2xl cursor-pointer bg-neutral-50/50 dark:bg-neutral-800/40 transition-colors">
                   <Upload className="w-8 h-8 text-neutral-400 mb-2" />
                   <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                     Click or drag photo here
@@ -355,7 +355,7 @@ export default function RegisterFoundPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-sm shadow-md transition-all disabled:opacity-50"
             >
               <Check className="w-5 h-5" />
               <span>{isPending ? 'Registering...' : 'Register Found Item & Enable Claims'}</span>

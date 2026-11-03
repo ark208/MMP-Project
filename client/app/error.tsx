@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { AlertCircle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 export default function ErrorBoundary({
   error,
@@ -17,22 +17,22 @@ export default function ErrorBoundary({
 
   return (
     <div className="min-h-[65vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-center space-y-5 shadow-xl animate-in zoom-in-95">
-        <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+      <div className="max-w-md w-full p-8 rounded-3xl border border-[#E8DED5] dark:border-[#332D27] bg-white dark:bg-[#221F1B] text-center space-y-5 shadow-xl animate-in zoom-in-95">
+        <div className="w-14 h-14 rounded-2xl bg-[#FAF0EB] dark:bg-[#34241E] text-[#B9573B] flex items-center justify-center mx-auto shadow-xs">
           <AlertCircle className="w-7 h-7" />
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-xl font-black text-neutral-900 dark:text-white">
+          <h2 className="text-xl font-black text-[#242424] dark:text-[#F5F1EB]">
             Something went sideways
           </h2>
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <p className="text-xs text-[#77716D] dark:text-[#A8A29D] leading-relaxed">
             An unexpected error occurred while loading this campus view.
           </p>
         </div>
 
         {error.message && (
-          <div className="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800/60 text-left text-[11px] font-mono text-neutral-600 dark:text-neutral-400 max-h-24 overflow-y-auto break-words">
+          <div className="p-3 rounded-2xl bg-[#F8F5F0] dark:bg-[#1E1B18] text-left text-[11px] font-mono text-[#77716D] dark:text-[#A8A29D] max-h-24 overflow-y-auto break-words border border-[#E8DED5] dark:border-[#332D27]">
             {error.message}
           </div>
         )}
@@ -41,7 +41,7 @@ export default function ErrorBoundary({
           <button
             type="button"
             onClick={reset}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-98"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#9E452D] text-white font-bold text-xs shadow-xs transition-all active:scale-98"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Try Again</span>
@@ -49,7 +49,7 @@ export default function ErrorBoundary({
 
           <Link
             href="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-bold text-xs text-neutral-700 dark:text-neutral-300 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-[#E8DED5] dark:border-[#332D27] hover:bg-[#F8F5F0] dark:hover:bg-[#2A2521] font-bold text-xs text-[#242424] dark:text-[#F5F1EB] transition-colors"
           >
             <Home className="w-4 h-4" />
             <span>Campus Home</span>
@@ -59,4 +59,3 @@ export default function ErrorBoundary({
     </div>
   );
 }
-

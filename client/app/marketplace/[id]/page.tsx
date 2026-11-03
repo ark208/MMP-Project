@@ -255,18 +255,18 @@ export default function MarketplaceDetailPage() {
               <div className="flex-1 truncate">
                 <div className="font-bold text-sm text-neutral-900 dark:text-white flex items-center gap-1.5">
                   <span>{listing.seller?.name || 'Alex Chen'}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#6698C2]/15 text-[#6698C2] dark:text-[#6698C2]">
                     Verified Student
                   </span>
                 </div>
                 <div className="text-xs text-neutral-500 truncate mt-0.5">
-                  {listing.seller?.email || 'student@campus.edu'}
+                  {listing.seller?.email || 'student@iiitkota.ac.in'}
                 </div>
               </div>
             </div>
 
             <div className="text-[11px] text-neutral-500 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <ShieldCheck className="w-4 h-4 text-[#6698C2]" />
               <span>CampusLoop Verified • Safe exchange on campus grounds</span>
             </div>
           </div>

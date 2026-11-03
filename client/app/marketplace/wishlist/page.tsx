@@ -137,7 +137,7 @@ export default function WishlistPage() {
                     <span className="font-semibold text-purple-600 dark:text-purple-400">
                       {item.category}
                     </span>
-                    <span className="inline-flex items-center gap-1 font-bold text-emerald-600">
+                    <span className="inline-flex items-center gap-1 font-bold text-[#B9573B]">
                       View Item <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>

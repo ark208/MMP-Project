@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -104,21 +104,21 @@ export function MatchCard({
       className={`rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden transition-all ${className}`}
     >
       {/* Header Banner */}
-      <div className="p-5 sm:p-6 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="p-5 sm:p-6 bg-gradient-to-r from-[#B9573B]/10 via-teal-500/10 to-blue-500/10 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-[#B9573B] text-white flex items-center justify-center shadow-md shadow-[#B9573B]/20 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-black uppercase tracking-wider text-[#B9573B] dark:text-[#d4795c]">
                   Campus AI Match Engine
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     match.status === 'ACCEPTED'
-                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
+                      ? 'bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#8f3f27] dark:text-[#d4795c]'
                       : match.status === 'DISMISSED'
                       ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
                       : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
@@ -141,11 +141,11 @@ export function MatchCard({
           <div className="flex items-center gap-2.5 self-start sm:self-center px-4 py-2 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-xs">
             <div className="text-right">
               <div className="text-[10px] uppercase font-bold text-neutral-400">Match Score</div>
-              <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+              <div className="text-base font-black text-[#B9573B] dark:text-[#d4795c]">
                 {percentage}% Confidence
               </div>
             </div>
-            <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center font-black text-xs text-emerald-700 dark:text-emerald-300">
+            <div className="w-9 h-9 rounded-full bg-[#FDF4F1] dark:bg-[#2a1410] flex items-center justify-center font-black text-xs text-[#8f3f27] dark:text-[#d4795c]">
               {percentage}%
             </div>
           </div>
@@ -153,7 +153,7 @@ export function MatchCard({
 
         {/* Match Reasons Badges */}
         {match.reasons && match.reasons.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-emerald-500/10">
+          <div className="mt-4 pt-4 border-t border-[#B9573B]/10">
             <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 block mb-2">
               Why our engine flagged this match:
             </span>
@@ -161,9 +161,9 @@ export function MatchCard({
               {match.reasons.map((reason, idx) => (
                 <div
                   key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-white/80 dark:bg-neutral-800/80 border border-emerald-500/20 text-neutral-800 dark:text-neutral-200 shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-white/80 dark:bg-neutral-800/80 border border-[#B9573B]/20 text-neutral-800 dark:text-neutral-200 shadow-2xs"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#B9573B] shrink-0" />
                   <span>{reason}</span>
                 </div>
               ))}
@@ -244,9 +244,9 @@ export function MatchCard({
           </div>
 
           {/* RIGHT: Found Item */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-teal-200 dark:border-teal-900/40 bg-teal-50/30 dark:bg-teal-950/10 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-teal-200/60 dark:border-teal-900/40">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300">
+          <div className="p-4 sm:p-5 rounded-2xl border border-[#6698C2]/30 dark:border-teal-900/40 bg-[#EEF3FA]/30 dark:bg-[#0e1a2a]/10 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#6698C2]/30/60 dark:border-teal-900/40">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase bg-[#D6E4F4] dark:bg-teal-900/60 text-[#6698C2] dark:text-[#6698C2]">
                 Found Item Match
               </span>
               {match.foundItem && (
@@ -276,7 +276,7 @@ export function MatchCard({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-neutral-600 dark:text-neutral-400 border-t border-teal-200/40 dark:border-teal-900/30">
+                <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-neutral-600 dark:text-neutral-400 border-t border-[#6698C2]/30/40 dark:border-teal-900/30">
                   <div className="flex items-center gap-1.5 truncate">
                     <Tag className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                     <span className="font-medium truncate">{match.foundItem.category}</span>
@@ -286,7 +286,7 @@ export function MatchCard({
                     <span className="font-medium truncate">{match.foundItem.location}</span>
                   </div>
                   {match.foundItem.holdingLocation && (
-                    <div className="flex items-center gap-1.5 col-span-2 text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-100/50 dark:bg-teal-900/30 px-2 py-1 rounded-lg">
+                    <div className="flex items-center gap-1.5 col-span-2 text-xs font-semibold text-[#6698C2] dark:text-[#6698C2] bg-[#D6E4F4]/50 dark:bg-teal-900/30 px-2 py-1 rounded-lg">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                       <span>Held securely at: {match.foundItem.holdingLocation}</span>
                     </div>
@@ -313,7 +313,7 @@ export function MatchCard({
         <div className="mt-6 pt-5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xs text-neutral-500 dark:text-neutral-400">
             {match.status === 'ACCEPTED' ? (
-              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="inline-flex items-center gap-1.5 text-[#B9573B] dark:text-[#d4795c] font-semibold">
                 <Check className="w-4 h-4" /> You confirmed this item is yours.
               </span>
             ) : match.status === 'DISMISSED' ? (
@@ -344,7 +344,7 @@ export function MatchCard({
                   type="button"
                   onClick={() => handleStatusUpdate('ACCEPTED')}
                   disabled={loadingAction !== null}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-md shadow-[#B9573B]/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>This is mine</span>
@@ -356,7 +356,7 @@ export function MatchCard({
                   <button
                     type="button"
                     onClick={() => setShowClaimModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-sm transition-all"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Answer Secret Question to Claim</span>
@@ -376,7 +376,7 @@ export function MatchCard({
                 type="button"
                 onClick={() => handleStatusUpdate('ACCEPTED')}
                 disabled={loadingAction !== null}
-                className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500 hover:text-[#B9573B] dark:hover:text-[#d4795c] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 Re-open Match
               </button>
@@ -391,7 +391,7 @@ export function MatchCard({
           <div className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-3xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                <div className="p-2 rounded-xl bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#B9573B] dark:text-[#d4795c]">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -414,12 +414,12 @@ export function MatchCard({
 
             {claimSuccessData ? (
               <div className="space-y-4 py-2">
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs space-y-2">
+                <div className="p-4 rounded-2xl bg-[#FDF4F1] dark:bg-[#2a1410]/40 border border-[#E8DED5] dark:border-[#B9573B]/40 text-[#5a2010] dark:text-[#e8b5a3] text-xs space-y-2">
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-5 h-5 text-[#B9573B] dark:text-[#d4795c]" />
                     <span>{claimSuccessData.message}</span>
                   </div>
-                  <p className="text-emerald-700 dark:text-emerald-300">
+                  <p className="text-[#8f3f27] dark:text-[#d4795c]">
                     Your claim has been verified and registered on CampusLoop.
                   </p>
                 </div>
@@ -453,7 +453,7 @@ export function MatchCard({
                   {claimSuccessData.finderContact.holdingLocation && (
                     <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700">
                       <span className="text-neutral-400">Handover Location:</span>{' '}
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="font-bold text-[#B9573B] dark:text-[#d4795c]">
                         {claimSuccessData.finderContact.holdingLocation}
                       </span>
                     </div>
@@ -492,7 +492,7 @@ export function MatchCard({
                     value={secretAnswer}
                     onChange={(e) => setSecretAnswer(e.target.value)}
                     placeholder="Enter the secret answer (e.g. Totoro sticker, blue carabiner)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-[#B9573B] outline-none"
                   />
                 </div>
 
@@ -505,7 +505,7 @@ export function MatchCard({
                     value={claimNote}
                     onChange={(e) => setClaimNote(e.target.value)}
                     placeholder="Provide any additional identifiers (e.g. student ID, serial number fragment)"
-                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs focus:ring-2 focus:ring-[#B9573B] outline-none resize-none"
                   />
                 </div>
 
@@ -520,7 +520,7 @@ export function MatchCard({
                   <button
                     type="submit"
                     disabled={claimLoading || !secretAnswer.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all"
+                    className="px-5 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-md shadow-[#B9573B]/20 disabled:opacity-50 transition-all"
                   >
                     {claimLoading ? 'Verifying Answer...' : 'Submit Claim'}
                   </button>
