@@ -12,7 +12,6 @@ RUN npm ci --workspace=server
 
 # Copy server source and prisma schema
 COPY server/ ./server/
-COPY docs/ ./docs/
 
 # Generate Prisma Client & compile TypeScript
 WORKDIR /app/server
