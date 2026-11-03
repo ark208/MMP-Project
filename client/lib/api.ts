@@ -18,6 +18,13 @@ import type {
   Conversation,
   Message,
   Notification,
+  Match,
+  MatchStatus,
+  NotificationPreference,
+  Report,
+  ReportTargetType,
+  ReportStatus,
+  AdminAnalytics,
 } from "@docs/types";
 import {
   getMockStore,
@@ -423,8 +430,14 @@ export const foundApi = {
 
   async claim(
     id: string,
-    data: { note: string; proofImageUrl?: string; answer?: string },
+    dataOrAnswer: { note?: string; proofImageUrl?: string; answer?: string } | string,
+    claimNote?: string,
   ): Promise<any> {
+    const payload =
+      typeof dataOrAnswer === "string"
+        ? { answer: dataOrAnswer, note: claimNote || "" }
+        : { note: dataOrAnswer.note || "", answer: dataOrAnswer.answer, proofImageUrl: dataOrAnswer.proofImageUrl };
+
     if (USE_MOCKS) {
       await delay(250);
       const store = getMockStore();
@@ -433,7 +446,7 @@ export const foundApi = {
 
       store.foundItems[index] = {
         ...store.foundItems[index],
-        status: "CLAIMED",
+        status: "reunited",
         claimedByUserId: store.user.id,
         claimedByUser: {
           id: store.user.id,
@@ -441,16 +454,26 @@ export const foundApi = {
           email: store.user.email,
           avatarUrl: store.user.avatarUrl,
         },
-        claimNote: data.note,
-        claimAnswer: data.answer,
+        claimNote: payload.note,
+        claimAnswer: payload.answer,
         updatedAt: new Date().toISOString(),
       };
       saveMockStore(store);
-      return store.foundItems[index];
+      return {
+        success: true,
+        message: "Claim verified! You answered the secret question correctly.",
+        finderContact: {
+          name: store.foundItems[index].user?.name || "Sam Chen",
+          email: store.foundItems[index].user?.email || "finder@campus.edu",
+          phone: "+1 (555) 019-3333",
+          holdingLocation: store.foundItems[index].keptAt || "Campus Security Central Office",
+        },
+        item: store.foundItems[index],
+      };
     }
     return apiFetch<any>(`/found/${id}/claim`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
   },
 
@@ -729,6 +752,7 @@ export const tripsApi = {
     toStation: string;
     date: string;
     departureTime?: string;
+    notes?: string;
   }): Promise<TrainTrip> {
     if (USE_MOCKS) {
       await delay(200);
@@ -826,6 +850,18 @@ export const tripsApi = {
     });
   },
 
+  async post(data: {
+    trainNumber: string;
+    trainName?: string;
+    fromStation: string;
+    toStation: string;
+    date: string;
+    departureTime?: string;
+    notes?: string;
+  }): Promise<TrainTrip> {
+    return this.create(data);
+  },
+
   async listMine(): Promise<TrainTrip[]> {
     if (USE_MOCKS) {
       await delay();
@@ -833,6 +869,10 @@ export const tripsApi = {
       return store.trainTrips;
     }
     return apiFetch<TrainTrip[]>("/trips/mine");
+  },
+
+  async getMine(): Promise<TrainTrip[]> {
+    return this.listMine();
   },
 
   async getBuddies(tripId: string): Promise<TrainBuddyMatch[]> {
@@ -1268,6 +1308,10 @@ export const chatApi = {
     });
   },
 
+  async startConversation(recipientId: string): Promise<Conversation> {
+    return this.getOrCreate(recipientId);
+  },
+
   async getMessages(
     conversationId: string,
     limit = 50,
@@ -1379,6 +1423,235 @@ export const notificationsApi = {
       },
     );
   },
+
+  async getPreferences(): Promise<NotificationPreference> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      return store.preferences;
+    }
+    return apiFetch<NotificationPreference>("/notifications/preferences");
+  },
+
+  async updatePreferences(
+    data: Partial<NotificationPreference>,
+  ): Promise<NotificationPreference> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      store.preferences = {
+        ...store.preferences,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
+      saveMockStore(store);
+      return store.preferences;
+    }
+    return apiFetch<NotificationPreference>("/notifications/preferences", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Matches API (Smart Matching Experience)
+// -------------------------------------------------------------------------
+export const matchesApi = {
+  async list(status?: MatchStatus): Promise<Match[]> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      if (!status) return store.matches;
+      return store.matches.filter((m) => m.status === status);
+    }
+    const query = status ? `?status=${status}` : "";
+    return apiFetch<Match[]>(`/matches${query}`);
+  },
+
+  async get(id: string): Promise<Match> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const match = store.matches.find((m) => m.id === id);
+      if (!match) throw new Error("Match not found");
+      return match;
+    }
+    return apiFetch<Match>(`/matches/${id}`);
+  },
+
+  async updateStatus(id: string, status: MatchStatus): Promise<Match> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const match = store.matches.find((m) => m.id === id);
+      if (!match) throw new Error("Match not found");
+      match.status = status;
+      match.updatedAt = new Date().toISOString();
+      saveMockStore(store);
+      return match;
+    }
+    return apiFetch<Match>(`/matches/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Reports API
+// -------------------------------------------------------------------------
+export const reportsApi = {
+  async create(data: {
+    targetType: ReportTargetType;
+    targetId: string;
+    reason: string;
+    details?: string;
+  }): Promise<Report> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const newReport: Report = {
+        id: `rep_${Date.now()}`,
+        reporterId: store.user.id,
+        reporter: {
+          id: store.user.id,
+          name: store.user.name,
+          email: store.user.email,
+          avatarUrl: store.user.avatarUrl,
+        },
+        targetType: data.targetType,
+        targetId: data.targetId,
+        reason: data.reason,
+        details: data.details || null,
+        status: "PENDING",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      store.reports.unshift(newReport);
+      saveMockStore(store);
+      return newReport;
+    }
+    return apiFetch<Report>("/reports", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// -------------------------------------------------------------------------
+// Admin API (Admin Moderation & Analytics)
+// -------------------------------------------------------------------------
+export const adminApi = {
+  async getReports(params?: {
+    status?: ReportStatus;
+    targetType?: string;
+  }): Promise<Report[]> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      let res = store.reports;
+      if (params?.status) {
+        res = res.filter((r) => r.status === params.status);
+      }
+      if (params?.targetType) {
+        res = res.filter((r) => r.targetType === params.targetType);
+      }
+      return res;
+    }
+    const sp = new URLSearchParams();
+    if (params?.status) sp.set("status", params.status);
+    if (params?.targetType) sp.set("targetType", params.targetType);
+    const qs = sp.toString() ? `?${sp.toString()}` : "";
+    return apiFetch<Report[]>(`/admin/reports${qs}`);
+  },
+
+  async deletePost(
+    type: string,
+    id: string,
+  ): Promise<{ message: string; success: boolean }> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const normalizedType = type.toLowerCase();
+      if (normalizedType.includes("listing")) {
+        store.listings = store.listings.filter((l) => l.id !== id);
+      } else if (normalizedType.includes("lost")) {
+        store.lostItems = store.lostItems.filter((i) => i.id !== id);
+      } else if (normalizedType.includes("found")) {
+        store.foundItems = store.foundItems.filter((i) => i.id !== id);
+      } else if (normalizedType.includes("ride")) {
+        store.rides = store.rides.filter((r) => r.id !== id);
+      }
+      store.reports.forEach((r) => {
+        if (r.targetId === id) r.status = "RESOLVED";
+      });
+      saveMockStore(store);
+      return { message: "Offending post deleted successfully", success: true };
+    }
+    return apiFetch<any>(
+      `/admin/posts/${type}/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
+  },
+
+  async banUser(
+    id: string,
+    reason?: string,
+  ): Promise<any> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      store.reports.forEach((r) => {
+        if (r.targetId === id || r.reporterId === id) r.status = "RESOLVED";
+      });
+      saveMockStore(store);
+      return { message: "User banned successfully", success: true };
+    }
+    return apiFetch<any>(
+      `/admin/users/${id}/ban`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isBanned: true, reason }),
+      },
+    );
+  },
+
+  async getAnalytics(): Promise<AdminAnalytics> {
+    if (USE_MOCKS) {
+      await delay();
+      const store = getMockStore();
+      const itemsReunited =
+        store.lostItems.filter((i) => i.status === "reunited" || i.status === "RESOLVED").length +
+        store.foundItems.filter((i) => i.status === "reunited" || i.status === "RESOLVED").length;
+      const ridesCompleted = store.rides.filter(
+        (r) => r.status === "COMPLETED",
+      ).length;
+      const activeListings = store.listings.filter(
+        (l) => l.status === "available" || l.status === "AVAILABLE",
+      ).length;
+      const reportsPending = store.reports.filter(
+        (r) => r.status === "PENDING",
+      ).length;
+
+      return {
+        itemsReunited: itemsReunited || 14,
+        ridesCompleted: ridesCompleted || 28,
+        activeListings: activeListings || 32,
+        reportsPending: reportsPending,
+        breakdown: {
+          lostItemsReunited: 8,
+          foundItemsReunited: 6,
+          totalUsers: 142,
+          activeRides: store.rides.filter((r) => r.status === "OPEN").length,
+          totalMatches: store.matches.length,
+        },
+      };
+    }
+    return apiFetch<AdminAnalytics>("/admin/analytics");
+  },
 };
 
 // Unified export
@@ -1393,6 +1666,9 @@ export const api = {
   rides: ridesApi,
   chat: chatApi,
   notifications: notificationsApi,
+  matches: matchesApi,
+  reports: reportsApi,
+  admin: adminApi,
 };
 
 export default api;

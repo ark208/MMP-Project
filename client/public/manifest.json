@@ -1,0 +1,26 @@
+{
+  "name": "CampusLoop - University Network",
+  "short_name": "CampusLoop",
+  "description": "Smart Lost & Found, Verified Ride Sharing, Train Buddy Radar, and Campus Marketplace for university students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "categories": ["education", "social", "travel"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

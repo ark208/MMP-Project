@@ -213,8 +213,15 @@ router.get(
         throw new AppError(404, 'NOT_FOUND', 'Found item not found');
       }
 
-      // Omit secretAnswer
+      // Omit secretAnswer and ensure finder email/phone are never leaked before claim
       const { secretAnswer: _, ...sanitized } = item;
+      if (sanitized.user) {
+        sanitized.user = {
+          id: sanitized.user.id,
+          name: sanitized.user.name,
+          avatarUrl: sanitized.user.avatarUrl || null,
+        };
+      }
 
       sendSuccess(res, sanitized);
     } catch (err) {

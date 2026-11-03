@@ -103,38 +103,40 @@ function ChatContent() {
 
     try {
       socket = getSocket();
-      if (!socket.connected) {
-        socket.connect();
-      }
-
-      // Join active conversation room
-      socket.emit('chat:join', activeConvId);
-
-      const handleIncomingMessage = (newMsg: Message) => {
-        if (newMsg.conversationId === activeConvId) {
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-          setTimeout(() => scrollToBottom('smooth'), 50);
+      if (socket) {
+        if (!socket.connected) {
+          socket.connect();
         }
 
-        // Update last message in conversation list
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === newMsg.conversationId
-              ? { ...c, lastMessage: newMsg, updatedAt: newMsg.createdAt }
-              : c
-          )
-        );
-      };
+        // Join active conversation room
+        socket.emit('chat:join', activeConvId);
 
-      socket.on('message:new', handleIncomingMessage);
+        const handleIncomingMessage = (newMsg: Message) => {
+          if (newMsg.conversationId === activeConvId) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+            setTimeout(() => scrollToBottom('smooth'), 50);
+          }
 
-      return () => {
-        socket?.emit('chat:leave', activeConvId);
-        socket?.off('message:new', handleIncomingMessage);
-      };
+          // Update last message in conversation list
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === newMsg.conversationId
+                ? { ...c, lastMessage: newMsg, updatedAt: newMsg.createdAt }
+                : c
+            )
+          );
+        };
+
+        socket.on('message:new', handleIncomingMessage);
+
+        return () => {
+          socket?.emit('chat:leave', activeConvId);
+          socket?.off('message:new', handleIncomingMessage);
+        };
+      }
     } catch (err) {
       console.warn('[Chat] Socket connection warning:', err);
     }

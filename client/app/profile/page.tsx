@@ -20,6 +20,7 @@ import {
   X,
   Check,
   CheckCheck,
+  Bell,
 } from 'lucide-react';
 import type { LostItem, Listing } from '@docs/types';
 import { ExtendedFoundItem } from '@/lib/mock-data';
@@ -153,7 +154,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 justify-center">
+                <div className="flex items-center gap-2 justify-center flex-wrap">
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors"
@@ -161,6 +162,14 @@ export default function ProfilePage() {
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>Edit Profile</span>
                   </button>
+
+                  <Link
+                    href="/notifications/settings"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors"
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Notification Settings</span>
+                  </Link>
 
                   <button
                     onClick={logout}
