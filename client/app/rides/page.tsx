@@ -1,9 +1,9 @@
-﻿'use client';
+﻿"use client";
 
-import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Car,
   Plus,
@@ -20,35 +20,66 @@ import {
   MessageSquare,
   LogOut,
   X,
-} from 'lucide-react';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/lib/toast-context';
-import { api } from '@/lib/api';
-import { getSocket } from '@/lib/socket';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ReportButton } from '@/components/report/ReportButton';
-import { SafetyBanner } from '@/components/safety/SafetyBanner';
-import type { Ride, RideStatus, FareSplitInfo } from '@docs/types';
+  Loader2,
+} from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
+import { api } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ReportButton } from "@/components/report/ReportButton";
+import { SafetyBanner } from "@/components/safety/SafetyBanner";
+import type { Ride, RideStatus, FareSplitInfo } from "@docs/types";
 
-const CAMPUS_PICKUP_PRESETS = [
-  'Main Gate',
-  'Hostels',
-  'Library',
-  'Station',
-];
+const CAMPUS_PICKUP_PRESETS = ["Main Gate", "Hostels", "Library", "Station"];
+
+type GeoapifySuggestion = {
+  place_id?: string;
+  formatted: string;
+  address_line1?: string;
+  address_line2?: string;
+  lat: number;
+  lon: number;
+};
+
+// Verified permanent campus location: Ranpur, Kota, Rajasthan.
+// Geoapify can return unrelated results for the short query "IIIT Kota",
+// so this exact local result is supplied directly.
+const IIIT_KOTA_SUGGESTION: GeoapifySuggestion = {
+  place_id: "campus-iiit-kota",
+  formatted:
+    "Indian Institute of Information Technology, Kota, Ranpur, Rajasthan, India",
+  address_line1: "Indian Institute of Information Technology, Kota",
+  address_line2: "Ranpur, Kota, Rajasthan, India",
+  lat: 25.0499,
+  lon: 75.8321,
+};
+
+const isIIITKotaQuery = (value: string) => {
+  const query = value.trim().toLowerCase().replace(/[.,]/g, " ");
+  return (
+    query === "iiit" ||
+    query.includes("iiit kota") ||
+    query.includes("indian institute of information technology kota")
+  );
+};
+
+const GEOAPIFY_API_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY;
 
 const RideNavigationMap = dynamic(
-  () => import('@/components/rides/RideNavigationMap'),
+  () => import("@/components/rides/RideNavigationMap"),
   {
     ssr: false,
     loading: () => (
       <div className="w-full h-full min-h-[380px] rounded-3xl bg-neutral-100 dark:bg-neutral-900 animate-pulse flex flex-col items-center justify-center p-6 text-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#B9573B] border-t-transparent animate-spin mb-3" />
-        <span className="text-xs font-bold text-neutral-500">Loading interactive campus map...</span>
+        <span className="text-xs font-bold text-neutral-500">
+          Loading interactive campus map...
+        </span>
       </div>
     ),
-  }
+  },
 );
 
 export default function RidesPage() {
@@ -58,35 +89,214 @@ export default function RidesPage() {
 
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [showCreateForm, setShowCreateForm] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Form State
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [departureDate, setDepartureDate] = useState('');
-  const [departureTime, setDepartureTime] = useState('');
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+  const [originCoords, setOriginCoords] = useState<[number, number] | null>(
+    null,
+  );
+  const [destinationCoords, setDestinationCoords] = useState<
+    [number, number] | null
+  >(null);
+  const [originSuggestions, setOriginSuggestions] = useState<
+    GeoapifySuggestion[]
+  >([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<
+    GeoapifySuggestion[]
+  >([]);
+  const [originSearchLoading, setOriginSearchLoading] = useState(false);
+  const [destinationSearchLoading, setDestinationSearchLoading] =
+    useState(false);
+  const [activeLocationInput, setActiveLocationInput] = useState<
+    "origin" | "destination" | null
+  >(null);
+  const [departureDate, setDepartureDate] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
   const [totalSeats, setTotalSeats] = useState(4);
-  const [estimatedFare, setEstimatedFare] = useState('');
-  const [notes, setNotes] = useState('');
+  const [estimatedFare, setEstimatedFare] = useState("");
+  const [notes, setNotes] = useState("");
   const [submittingRide, setSubmittingRide] = useState(false);
 
   // Live Fare Splitter Modal State
-  const [selectedRideForSplit, setSelectedRideForSplit] = useState<Ride | null>(null);
-  const [splitTotalFareInput, setSplitTotalFareInput] = useState<string>('');
-  const [fareSplitResult, setFareSplitResult] = useState<FareSplitInfo | null>(null);
+  const [selectedRideForSplit, setSelectedRideForSplit] = useState<Ride | null>(
+    null,
+  );
+  const [splitTotalFareInput, setSplitTotalFareInput] = useState<string>("");
+  const [fareSplitResult, setFareSplitResult] = useState<FareSplitInfo | null>(
+    null,
+  );
   const [calculatingSplit, setCalculatingSplit] = useState(false);
+
+  // Geoapify autocomplete: only selected suggestions become map coordinates.
+  useEffect(() => {
+    if (
+      activeLocationInput !== "origin" ||
+      origin.trim().length < 3 ||
+      !GEOAPIFY_API_KEY
+    ) {
+      setOriginSuggestions([]);
+      setOriginSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setOriginSearchLoading(true);
+      try {
+        // Always show the verified campus result for the campus alias.
+        // Do not mix it with unrelated nationwide matches from Geoapify.
+        if (isIIITKotaQuery(origin)) {
+          setOriginSuggestions([IIIT_KOTA_SUGGESTION]);
+          return;
+        }
+
+        const params = new URLSearchParams({
+          text: origin.trim(),
+          format: "json",
+          limit: "5",
+          filter: "countrycode:in|circle:75.8321,25.0499,40000",
+          bias: "proximity:75.8321,25.0499",
+          apiKey: GEOAPIFY_API_KEY,
+        });
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok)
+          throw new Error(`Geoapify returned ${response.status}`);
+        const data = await response.json();
+        setOriginSuggestions(
+          (data.results || []).filter(
+            (item: GeoapifySuggestion) =>
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lon) &&
+              item.formatted,
+          ),
+        );
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("[Rides] Pickup autocomplete failed:", error);
+          setOriginSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setOriginSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [origin, activeLocationInput]);
+
+  useEffect(() => {
+    if (
+      activeLocationInput !== "destination" ||
+      destination.trim().length < 3 ||
+      !GEOAPIFY_API_KEY
+    ) {
+      setDestinationSuggestions([]);
+      setDestinationSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setDestinationSearchLoading(true);
+      try {
+        // Always show the verified campus result for the campus alias.
+        // Do not mix it with unrelated nationwide matches from Geoapify.
+        if (isIIITKotaQuery(destination)) {
+          setDestinationSuggestions([IIIT_KOTA_SUGGESTION]);
+          return;
+        }
+
+        const params = new URLSearchParams({
+          text: destination.trim(),
+          format: "json",
+          limit: "5",
+          filter: "countrycode:in|circle:75.8321,25.0499,40000",
+          bias: "proximity:75.8321,25.0499",
+          apiKey: GEOAPIFY_API_KEY,
+        });
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok)
+          throw new Error(`Geoapify returned ${response.status}`);
+        const data = await response.json();
+        setDestinationSuggestions(
+          (data.results || []).filter(
+            (item: GeoapifySuggestion) =>
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lon) &&
+              item.formatted,
+          ),
+        );
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("[Rides] Destination autocomplete failed:", error);
+          setDestinationSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setDestinationSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [destination, activeLocationInput]);
+
+  const selectLocationSuggestion = (
+    type: "origin" | "destination",
+    suggestion: GeoapifySuggestion,
+  ) => {
+    const coordinates: [number, number] = [suggestion.lon, suggestion.lat];
+    if (type === "origin") {
+      setOrigin(suggestion.formatted);
+      setOriginCoords(coordinates);
+      setOriginSuggestions([]);
+      setOriginSearchLoading(false);
+    } else {
+      setDestination(suggestion.formatted);
+      setDestinationCoords(coordinates);
+      setDestinationSuggestions([]);
+      setDestinationSearchLoading(false);
+    }
+    setActiveLocationInput(null);
+  };
+
+  const handleOriginMapSelect = (address: string, coords: [number, number]) => {
+    setOrigin(address);
+    setOriginCoords(coords);
+    setOriginSuggestions([]);
+  };
+
+  const handleDestinationMapSelect = (
+    address: string,
+    coords: [number, number],
+  ) => {
+    setDestination(address);
+    setDestinationCoords(coords);
+    setDestinationSuggestions([]);
+  };
 
   const loadRides = async () => {
     try {
       setLoading(true);
       const data = await api.rides.list({
-        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
       });
       setRides(data || []);
     } catch (err) {
-      console.error('Failed to load rides:', err);
+      console.error("Failed to load rides:", err);
     } finally {
       setLoading(false);
     }
@@ -124,8 +334,8 @@ export default function RidesPage() {
                     status: (data.status as any) || r.status,
                     updatedAt: data.updatedAt || new Date().toISOString(),
                   }
-                : r
-            )
+                : r,
+            ),
           );
           setSelectedRideForSplit((prev) =>
             prev && prev.id === data.id
@@ -137,39 +347,52 @@ export default function RidesPage() {
                       : prev.availableSeats,
                   status: (data.status as any) || prev.status,
                 }
-              : prev
+              : prev,
           );
         };
 
-        socket.on('ride:updated', handleRideUpdated);
+        socket.on("ride:updated", handleRideUpdated);
 
         // Subscribe to listed rides
         rides.forEach((r) => {
-          socket?.emit('ride:subscribe', r.id);
+          socket?.emit("ride:subscribe", r.id);
         });
 
         return () => {
-          socket?.off('ride:updated', handleRideUpdated);
+          socket?.off("ride:updated", handleRideUpdated);
           rides.forEach((r) => {
-            socket?.emit('ride:unsubscribe', r.id);
+            socket?.emit("ride:unsubscribe", r.id);
           });
         };
       }
     } catch (err) {
-      console.warn('[Rides] Socket subscription error:', err);
+      console.warn("[Rides] Socket subscription error:", err);
     }
   }, [rides.length]);
 
   const handleCreateRide = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!origin.trim() || !destination.trim() || !departureDate || !departureTime) {
-      toast.error('Please provide pickup origin, destination, date, and time.');
+    if (
+      !origin.trim() ||
+      !destination.trim() ||
+      !departureDate ||
+      !departureTime
+    ) {
+      toast.error("Please provide pickup origin, destination, date, and time.");
+      return;
+    }
+    if (!originCoords || !destinationCoords) {
+      toast.error(
+        "Select a pickup and drop-off location from the search suggestions, or pin them on the map.",
+      );
       return;
     }
 
     try {
       setSubmittingRide(true);
-      const isoDateTime = new Date(`${departureDate}T${departureTime}`).toISOString();
+      const isoDateTime = new Date(
+        `${departureDate}T${departureTime}`,
+      ).toISOString();
       const fare = parseFloat(estimatedFare) || 0;
 
       await api.rides.create({
@@ -181,17 +404,21 @@ export default function RidesPage() {
         notes: notes.trim() || undefined,
       });
 
-      toast.success('Ride offer published! Group chat activated.');
+      toast.success("Ride offer published! Group chat activated.");
       setShowCreateForm(false);
-      setOrigin('');
-      setDestination('');
-      setDepartureDate('');
-      setDepartureTime('');
-      setEstimatedFare('');
-      setNotes('');
+      setOrigin("");
+      setDestination("");
+      setOriginCoords(null);
+      setDestinationCoords(null);
+      setOriginSuggestions([]);
+      setDestinationSuggestions([]);
+      setDepartureDate("");
+      setDepartureTime("");
+      setEstimatedFare("");
+      setNotes("");
       loadRides();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create ride');
+      toast.error(err.message || "Failed to create ride");
     } finally {
       setSubmittingRide(false);
     }
@@ -201,24 +428,24 @@ export default function RidesPage() {
     try {
       setActionLoadingId(rideId);
       await api.rides.join(rideId);
-      toast.success('You joined the ride! Seat reserved.');
+      toast.success("You joined the ride! Seat reserved.");
       loadRides();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to join ride');
+      toast.error(err.message || "Failed to join ride");
     } finally {
       setActionLoadingId(null);
     }
   };
 
   const handleLeaveRide = async (rideId: string) => {
-    if (!confirm('Are you sure you want to leave this ride?')) return;
+    if (!confirm("Are you sure you want to leave this ride?")) return;
     try {
       setActionLoadingId(rideId);
       await api.rides.leave(rideId);
-      toast.info('You left the ride. Seat released.');
+      toast.info("You left the ride. Seat released.");
       loadRides();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to leave ride');
+      toast.error(err.message || "Failed to leave ride");
     } finally {
       setActionLoadingId(null);
     }
@@ -231,7 +458,7 @@ export default function RidesPage() {
       toast.success(`Ride status updated to ${status}.`);
       loadRides();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update status');
+      toast.error(err.message || "Failed to update status");
     } finally {
       setActionLoadingId(null);
     }
@@ -244,10 +471,13 @@ export default function RidesPage() {
     setSplitTotalFareInput(initialFare);
     try {
       setCalculatingSplit(true);
-      const splitInfo = await api.rides.getFareSplit(ride.id, ride.estimatedFare);
+      const splitInfo = await api.rides.getFareSplit(
+        ride.id,
+        ride.estimatedFare,
+      );
       setFareSplitResult(splitInfo);
     } catch (err) {
-      console.error('Failed to get fare split:', err);
+      console.error("Failed to get fare split:", err);
     } finally {
       setCalculatingSplit(false);
     }
@@ -261,11 +491,20 @@ export default function RidesPage() {
     if (isNaN(num) || num < 0) return;
 
     try {
-      const splitInfo = await api.rides.getFareSplit(selectedRideForSplit.id, num);
+      const splitInfo = await api.rides.getFareSplit(
+        selectedRideForSplit.id,
+        num,
+      );
       setFareSplitResult(splitInfo);
     } catch (err) {
       // Fallback local live computation
-      const members = selectedRideForSplit.members || selectedRideForSplit.passengers || [{ userId: selectedRideForSplit.creatorId, user: selectedRideForSplit.creator }];
+      const members = selectedRideForSplit.members ||
+        selectedRideForSplit.passengers || [
+          {
+            userId: selectedRideForSplit.creatorId,
+            user: selectedRideForSplit.creator,
+          },
+        ];
       const count = Math.max(1, members.length);
       const perPerson = parseFloat((num / count).toFixed(2));
       setFareSplitResult({
@@ -275,7 +514,7 @@ export default function RidesPage() {
         farePerPerson: perPerson,
         participants: members.map((m: any) => ({
           userId: m.userId,
-          name: m.user?.name || 'Passenger',
+          name: m.user?.name || "Passenger",
           amount: perPerson,
         })),
       });
@@ -284,26 +523,26 @@ export default function RidesPage() {
 
   const getStatusBadge = (status: RideStatus) => {
     switch (status) {
-      case 'OPEN':
+      case "OPEN":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F5DDD6] dark:bg-[#2a1410]/60 text-[#8f3f27] dark:text-[#d4795c]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FDF4F1]0 animate-pulse" />
             OPEN
           </span>
         );
-      case 'FULL':
+      case "FULL":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">
             FULL
           </span>
         );
-      case 'COMPLETED':
+      case "COMPLETED":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
             COMPLETED
           </span>
         );
-      case 'CANCELLED':
+      case "CANCELLED":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400">
             CANCELLED
@@ -332,7 +571,8 @@ export default function RidesPage() {
                 Campus Rides & Fare Splitting
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
-                Share rides to airports, railway stations, and city hubs with equal automated split fares.
+                Share rides to airports, railway stations, and city hubs with
+                equal automated split fares.
               </p>
             </div>
           </div>
@@ -341,8 +581,12 @@ export default function RidesPage() {
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg self-start sm:self-center"
           >
-            {showCreateForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            <span>{showCreateForm ? 'Cancel Offer' : 'Offer a Ride'}</span>
+            {showCreateForm ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            <span>{showCreateForm ? "Cancel Offer" : "Offer a Ride"}</span>
           </button>
         </div>
 
@@ -360,8 +604,10 @@ export default function RidesPage() {
                 <RideNavigationMap
                   originText={origin}
                   destinationText={destination}
-                  onOriginSelect={(address) => setOrigin(address)}
-                  onDestinationSelect={(address) => setDestination(address)}
+                  selectedOriginCoords={originCoords}
+                  selectedDestinationCoords={destinationCoords}
+                  onOriginSelect={handleOriginMapSelect}
+                  onDestinationSelect={handleDestinationMapSelect}
                   className="w-full flex-1 min-h-[350px] lg:min-h-full"
                 />
               </div>
@@ -373,25 +619,32 @@ export default function RidesPage() {
                     <Car className="w-4 h-4 text-[#B9573B]" />
                     <span>Create Campus Ride Share</span>
                   </h2>
-                  <span className="text-xs text-neutral-400">Open to verified peers</span>
+                  <span className="text-xs text-neutral-400">
+                    Open to verified peers
+                  </span>
                 </div>
 
                 <form onSubmit={handleCreateRide} className="space-y-4">
                   {/* Campus Pickup Point Presets (MANDATORY REQUIREMENT) */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                      Campus Pickup Point Presets <span className="text-rose-500">*</span>
+                      Campus Pickup Point Presets{" "}
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {CAMPUS_PICKUP_PRESETS.map((preset) => (
                         <button
                           key={preset}
                           type="button"
-                          onClick={() => setOrigin(preset)}
+                          onClick={() => {
+                            setOrigin(preset);
+                            setOriginCoords(null);
+                            setActiveLocationInput("origin");
+                          }}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                             origin === preset
-                              ? 'bg-[#B9573B] text-white shadow-xs'
-                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                              ? "bg-[#B9573B] text-white shadow-xs"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                           }`}
                         >
                           {preset}
@@ -404,35 +657,157 @@ export default function RidesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3.5">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                        Pickup Location / Specific Gate <span className="text-rose-500">*</span>
+                        Pickup Location / Specific Gate{" "}
+                        <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <MapPin className="w-4 h-4 text-[#B9573B] absolute left-3 top-3" />
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Main Gate (or choose preset above)"
+                          autoComplete="off"
+                          placeholder="Search pickup location..."
                           value={origin}
-                          onChange={(e) => setOrigin(e.target.value)}
-                          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                          onFocus={() => setActiveLocationInput("origin")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape")
+                              setActiveLocationInput(null);
+                          }}
+                          onChange={(e) => {
+                            setOrigin(e.target.value);
+                            setOriginCoords(null);
+                            setActiveLocationInput("origin");
+                          }}
+                          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                         />
+                        {originSearchLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-400 absolute right-3 top-3" />
+                        )}
+                        {activeLocationInput === "origin" &&
+                          originSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 z-40 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl">
+                              {originSuggestions.map((suggestion, index) => (
+                                <button
+                                  key={
+                                    suggestion.place_id ||
+                                    `${suggestion.lat}-${suggestion.lon}-${index}`
+                                  }
+                                  type="button"
+                                  onMouseDown={(event) =>
+                                    event.preventDefault()
+                                  }
+                                  onClick={() =>
+                                    selectLocationSuggestion(
+                                      "origin",
+                                      suggestion,
+                                    )
+                                  }
+                                  className="w-full flex items-start gap-2.5 px-3 py-3 text-left hover:bg-[#FDF4F1] dark:hover:bg-neutral-800 border-b last:border-b-0 border-neutral-100 dark:border-neutral-800"
+                                >
+                                  <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-[#B9573B]" />
+                                  <span className="min-w-0">
+                                    <span className="block text-xs font-bold text-neutral-800 dark:text-neutral-100">
+                                      {suggestion.address_line1 ||
+                                        suggestion.formatted}
+                                    </span>
+                                    <span className="block text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                                      {suggestion.address_line2 ||
+                                        suggestion.formatted}
+                                    </span>
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        {activeLocationInput === "origin" &&
+                          origin.trim().length >= 3 &&
+                          !originSearchLoading &&
+                          originSuggestions.length === 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 z-40 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-3 text-xs text-neutral-500 shadow-xl">
+                              {GEOAPIFY_API_KEY
+                                ? "No matching locations found."
+                                : "Add NEXT_PUBLIC_GEOAPIFY_API_KEY to client/.env.local."}
+                            </div>
+                          )}
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                        Drop-off Destination <span className="text-rose-500">*</span>
+                        Drop-off Destination{" "}
+                        <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <MapPin className="w-4 h-4 text-rose-500 absolute left-3 top-3" />
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Airport Terminal 3"
+                          autoComplete="off"
+                          placeholder="Search drop-off destination..."
                           value={destination}
-                          onChange={(e) => setDestination(e.target.value)}
-                          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
+                          onFocus={() => setActiveLocationInput("destination")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape")
+                              setActiveLocationInput(null);
+                          }}
+                          onChange={(e) => {
+                            setDestination(e.target.value);
+                            setDestinationCoords(null);
+                            setActiveLocationInput("destination");
+                          }}
+                          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#B9573B]"
                         />
+                        {destinationSearchLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-400 absolute right-3 top-3" />
+                        )}
+                        {activeLocationInput === "destination" &&
+                          destinationSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 z-40 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl">
+                              {destinationSuggestions.map(
+                                (suggestion, index) => (
+                                  <button
+                                    key={
+                                      suggestion.place_id ||
+                                      `${suggestion.lat}-${suggestion.lon}-${index}`
+                                    }
+                                    type="button"
+                                    onMouseDown={(event) =>
+                                      event.preventDefault()
+                                    }
+                                    onClick={() =>
+                                      selectLocationSuggestion(
+                                        "destination",
+                                        suggestion,
+                                      )
+                                    }
+                                    className="w-full flex items-start gap-2.5 px-3 py-3 text-left hover:bg-[#FDF4F1] dark:hover:bg-neutral-800 border-b last:border-b-0 border-neutral-100 dark:border-neutral-800"
+                                  >
+                                    <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-rose-500" />
+                                    <span className="min-w-0">
+                                      <span className="block text-xs font-bold text-neutral-800 dark:text-neutral-100">
+                                        {suggestion.address_line1 ||
+                                          suggestion.formatted}
+                                      </span>
+                                      <span className="block text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                                        {suggestion.address_line2 ||
+                                          suggestion.formatted}
+                                      </span>
+                                    </span>
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        {activeLocationInput === "destination" &&
+                          destination.trim().length >= 3 &&
+                          !destinationSearchLoading &&
+                          destinationSuggestions.length === 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 z-40 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-3 text-xs text-neutral-500 shadow-xl">
+                              {GEOAPIFY_API_KEY
+                                ? "No matching locations found."
+                                : "Add NEXT_PUBLIC_GEOAPIFY_API_KEY to client/.env.local."}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -527,7 +902,7 @@ export default function RidesPage() {
                       disabled={submittingRide}
                       className="px-6 py-2.5 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
                     >
-                      {submittingRide ? 'Publishing...' : 'Publish Ride'}
+                      {submittingRide ? "Publishing..." : "Publish Ride"}
                     </button>
                   </div>
                 </form>
@@ -539,14 +914,14 @@ export default function RidesPage() {
         {/* Filters */}
         <div className="flex items-center justify-between gap-3 overflow-x-auto pb-1 scrollbar-none">
           <div className="flex items-center gap-1.5">
-            {['ALL', 'OPEN', 'FULL', 'COMPLETED'].map((status) => (
+            {["ALL", "OPEN", "FULL", "COMPLETED"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   statusFilter === status
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                    : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs"
+                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 }`}
               >
                 {status}
@@ -555,7 +930,7 @@ export default function RidesPage() {
           </div>
 
           <span className="text-xs text-neutral-400 whitespace-nowrap">
-            {rides.length} ride{rides.length === 1 ? '' : 's'} available
+            {rides.length} ride{rides.length === 1 ? "" : "s"} available
           </span>
         </div>
 
@@ -565,7 +940,10 @@ export default function RidesPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 rounded-3xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+              <div
+                key={i}
+                className="h-44 rounded-3xl bg-neutral-100 dark:bg-neutral-800 animate-pulse"
+              />
             ))}
           </div>
         ) : rides.length === 0 ? (
@@ -595,7 +973,9 @@ export default function RidesPage() {
                       {getStatusBadge(ride.status)}
                       <div className="flex items-center gap-2 text-base font-black text-neutral-900 dark:text-white">
                         <span>{ride.origin}</span>
-                        <span className="text-[#B9573B] dark:text-[#d4795c]">&rarr;</span>
+                        <span className="text-[#B9573B] dark:text-[#d4795c]">
+                          &rarr;
+                        </span>
                         <span>{ride.destination}</span>
                       </div>
                     </div>
@@ -605,14 +985,14 @@ export default function RidesPage() {
                         <Clock className="w-3.5 h-3.5 text-neutral-400" />
                         <span>
                           {new Date(ride.departureTime).toLocaleDateString([], {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          })}{' '}
-                          at{' '}
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}{" "}
+                          at{" "}
                           {new Date(ride.departureTime).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </span>
                       </div>
@@ -623,7 +1003,9 @@ export default function RidesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 text-xs">
                     {/* Seats Info */}
                     <div className="space-y-1">
-                      <span className="text-neutral-400 font-semibold block text-[11px]">Seat Availability</span>
+                      <span className="text-neutral-400 font-semibold block text-[11px]">
+                        Seat Availability
+                      </span>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-[#B9573B]" />
                         <span className="font-bold text-neutral-900 dark:text-white">
@@ -634,30 +1016,40 @@ export default function RidesPage() {
 
                     {/* Fare info */}
                     <div className="space-y-1">
-                      <span className="text-neutral-400 font-semibold block text-[11px]">Est. Total Fare</span>
+                      <span className="text-neutral-400 font-semibold block text-[11px]">
+                        Est. Total Fare
+                      </span>
                       <div className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-white">
-                        <span className="text-[#B9573B] font-black">${ride.estimatedFare.toFixed(2)}</span>
+                        <span className="text-[#B9573B] font-black">
+                          ${ride.estimatedFare.toFixed(2)}
+                        </span>
                         <span className="text-[11px] text-neutral-400 font-normal">
-                          (~${(ride.estimatedFare / Math.max(1, members.length)).toFixed(2)} / person)
+                          (~$
+                          {(
+                            ride.estimatedFare / Math.max(1, members.length)
+                          ).toFixed(2)}{" "}
+                          / person)
                         </span>
                       </div>
                     </div>
 
                     {/* Creator Info */}
                     <div className="space-y-1">
-                      <span className="text-neutral-400 font-semibold block text-[11px]">Offered by</span>
+                      <span className="text-neutral-400 font-semibold block text-[11px]">
+                        Offered by
+                      </span>
                       <div className="flex items-center gap-2 truncate">
                         <img
                           src={
                             ride.creator?.avatarUrl ||
-                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${ride.creator?.name || 'Driver'}`
+                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${ride.creator?.name || "Driver"}`
                           }
-                          alt={ride.creator?.name || 'Creator'}
+                          alt={ride.creator?.name || "Creator"}
                           className="w-5 h-5 rounded-full object-cover shrink-0"
                         />
                         <span className="font-semibold text-neutral-800 dark:text-neutral-200 truncate">
-                          {ride.creator?.name || 'Campus Student'}
-                          {isCreator && ' (You)'}
+                          {ride.creator?.name || "Campus Student"}
+                          {isCreator && " (You)"}
                         </span>
                       </div>
                     </div>
@@ -681,10 +1073,10 @@ export default function RidesPage() {
                         {members.map((m, idx) => (
                           <div
                             key={m.id || idx}
-                            title={m.user?.name || 'Passenger'}
+                            title={m.user?.name || "Passenger"}
                             className="w-7 h-7 rounded-full bg-[#B9573B] text-white font-bold text-[10px] flex items-center justify-center ring-2 ring-white dark:ring-neutral-900"
                           >
-                            {(m.user?.name || 'P')[0]}
+                            {(m.user?.name || "P")[0]}
                           </div>
                         ))}
                       </div>
@@ -702,17 +1094,21 @@ export default function RidesPage() {
                       </button>
 
                       {/* Creator Status Controls */}
-                      {isCreator && ride.status !== 'COMPLETED' && ride.status !== 'CANCELLED' && (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleStatusChange(ride.id, 'COMPLETED')}
-                            disabled={isActionLoading}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#8f3f27] bg-[#FDF4F1] hover:bg-[#F5DDD6] dark:bg-[#2a1410]/60 dark:text-[#d4795c] transition-colors"
-                          >
-                            Mark Completed
-                          </button>
-                        </div>
-                      )}
+                      {isCreator &&
+                        ride.status !== "COMPLETED" &&
+                        ride.status !== "CANCELLED" && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() =>
+                                handleStatusChange(ride.id, "COMPLETED")
+                              }
+                              disabled={isActionLoading}
+                              className="px-3 py-2 rounded-xl text-xs font-bold text-[#8f3f27] bg-[#FDF4F1] hover:bg-[#F5DDD6] dark:bg-[#2a1410]/60 dark:text-[#d4795c] transition-colors"
+                            >
+                              Mark Completed
+                            </button>
+                          </div>
+                        )}
 
                       {/* Join / Leave Button (MANDATORY REQUIREMENT) */}
                       {!isCreator && (
@@ -724,21 +1120,27 @@ export default function RidesPage() {
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-400 transition-colors"
                             >
                               <LogOut className="w-3.5 h-3.5" />
-                              <span>{isActionLoading ? 'Leaving...' : 'Leave Ride'}</span>
+                              <span>
+                                {isActionLoading ? "Leaving..." : "Leave Ride"}
+                              </span>
                             </button>
                           ) : (
                             <button
                               onClick={() => handleJoinRide(ride.id)}
-                              disabled={ride.availableSeats <= 0 || ride.status !== 'OPEN' || isActionLoading}
+                              disabled={
+                                ride.availableSeats <= 0 ||
+                                ride.status !== "OPEN" ||
+                                isActionLoading
+                              }
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#B9573B] text-white hover:bg-[#a34e34] disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-colors"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>
                                 {isActionLoading
-                                  ? 'Joining...'
+                                  ? "Joining..."
                                   : ride.availableSeats <= 0
-                                  ? 'Ride Full'
-                                  : 'Join Ride'}
+                                    ? "Ride Full"
+                                    : "Join Ride"}
                               </span>
                             </button>
                           )}
@@ -775,7 +1177,8 @@ export default function RidesPage() {
                       Live Fare Splitter
                     </h3>
                     <p className="text-xs text-neutral-400">
-                      {selectedRideForSplit.origin} &rarr; {selectedRideForSplit.destination}
+                      {selectedRideForSplit.origin} &rarr;{" "}
+                      {selectedRideForSplit.destination}
                     </p>
                   </div>
                 </div>
@@ -805,7 +1208,8 @@ export default function RidesPage() {
                   />
                 </div>
                 <p className="text-[11px] text-neutral-400">
-                  Adjust this anytime according to the final Uber/Ola/meter receipt.
+                  Adjust this anytime according to the final Uber/Ola/meter
+                  receipt.
                 </p>
               </div>
 
@@ -819,8 +1223,9 @@ export default function RidesPage() {
                     ${fareSplitResult.farePerPerson.toFixed(2)}
                   </div>
                   <span className="text-xs text-neutral-400">
-                    Split equally among {fareSplitResult.passengerCount} traveler
-                    {fareSplitResult.passengerCount === 1 ? '' : 's'}
+                    Split equally among {fareSplitResult.passengerCount}{" "}
+                    traveler
+                    {fareSplitResult.passengerCount === 1 ? "" : "s"}
                   </span>
                 </div>
               )}
@@ -843,7 +1248,7 @@ export default function RidesPage() {
                           </div>
                           <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                             {p.name}
-                            {p.userId === user?.id && ' (You)'}
+                            {p.userId === user?.id && " (You)"}
                           </span>
                         </div>
                         <span className="font-extrabold text-neutral-900 dark:text-white">

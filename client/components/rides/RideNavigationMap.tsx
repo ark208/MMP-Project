@@ -1,8 +1,9 @@
-﻿'use client';
+﻿"use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import React, { useEffect, useRef, useState } from "react";
+import * as maplibregl from "maplibre-gl";
+import { setWorkerUrl } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MapPin,
   Navigation,
@@ -15,7 +16,15 @@ import {
   Check,
   Search,
   Crosshair,
-} from 'lucide-react';
+} from "lucide-react";
+// MapLibre GL JS v6 requires its worker to be explicitly resolved by the bundler.
+// This is the documented setup for Next.js 15+ with Webpack.
+setWorkerUrl(
+  new URL(
+    "maplibre-gl/dist/maplibre-gl-worker.mjs",
+    import.meta.url,
+  ).toString(),
+);
 
 export interface RouteMetrics {
   distanceKm: number;
@@ -28,92 +37,54 @@ interface RideNavigationMapProps {
   destinationText: string;
   onOriginSelect?: (address: string, coords: [number, number]) => void;
   onDestinationSelect?: (address: string, coords: [number, number]) => void;
+  /** Coordinates returned by the autocomplete selection in the parent form. */
+  selectedOriginCoords?: [number, number] | null;
+  selectedDestinationCoords?: [number, number] | null;
   className?: string;
 }
 
-// Campus & common regional preset anchor coordinates [longitude, latitude]
+// Verified permanent IIIT Kota campus anchor [longitude, latitude].
+// Do not assign invented coordinates to individual campus gates/buildings.
 export const CAMPUS_PRESET_COORDINATES: Record<string, [number, number]> = {
-  'Main Gate': [77.1915, 28.5450],
-  'Hostels': [77.1865, 28.5485],
-  'Library': [77.1895, 28.5440],
-  'Station': [77.2195, 28.5200],
-  'Airport Terminal 3': [77.0850, 28.5560],
-  'City Center': [77.2167, 28.6328],
-  'Railway Station': [77.2195, 28.5200],
-  'Metro Station': [77.1950, 28.5390],
+  "IIIT Kota": [75.8321, 25.0499],
 };
 
-const DEFAULT_CENTER: [number, number] = [77.1915, 28.5450]; // Campus Center
+const DEFAULT_CENTER: [number, number] = [75.8321, 25.0499]; // IIIT Kota, Ranpur
 const DEFAULT_ZOOM = 13.5;
 
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
 export default function RideNavigationMap({
   originText,
   destinationText,
   onOriginSelect,
   onDestinationSelect,
-  className = '',
+  selectedOriginCoords = null,
+  selectedDestinationCoords = null,
+  className = "",
 }: RideNavigationMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const originMarkerRef = useRef<maplibregl.Marker | null>(null);
   const destMarkerRef = useRef<maplibregl.Marker | null>(null);
 
-  const [originCoords, setOriginCoords] = useState<[number, number] | null>(null);
-  const [destCoords, setDestCoords] = useState<[number, number] | null>(null);
+  const [originCoords, setOriginCoords] = useState<[number, number] | null>(
+    selectedOriginCoords,
+  );
+  const [destCoords, setDestCoords] = useState<[number, number] | null>(
+    selectedDestinationCoords,
+  );
   const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null);
 
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [isRouting, setIsRouting] = useState(false);
   const [routingError, setRoutingError] = useState<string | null>(null);
-  const [clickTarget, setClickTarget] = useState<'origin' | 'destination'>('destination');
+  const [clickTarget, setClickTarget] = useState<"origin" | "destination">(
+    "destination",
+  );
   const [clickPopupInfo, setClickPopupInfo] = useState<{
     lngLat: [number, number];
     label: string;
   } | null>(null);
-
-  // Helper to resolve preset or geocoded query
-  const geocodeLocation = useCallback(async (query: string): Promise<[number, number] | null> => {
-    if (!query || !query.trim()) return null;
-    const clean = query.trim();
-
-    // Check exact or partial preset matches first
-    for (const [key, coords] of Object.entries(CAMPUS_PRESET_COORDINATES)) {
-      if (clean.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(clean.toLowerCase())) {
-        return coords;
-      }
-    }
-
-    // Attempt Nominatim query with timeout and safe fallback
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&limit=1`,
-        {
-          signal: controller.signal,
-          headers: {
-            'Accept-Language': 'en',
-          },
-        }
-      );
-      clearTimeout(timeoutId);
-
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        if (!isNaN(lat) && !isNaN(lon)) {
-          return [lon, lat];
-        }
-      }
-    } catch {
-      // Graceful fallback for offline / network sandbox
-    }
-
-    return null;
-  }, []);
 
   // Initialize MapLibre
   useEffect(() => {
@@ -125,22 +96,23 @@ export default function RideNavigationMap({
         style: {
           version: 8,
           sources: {
-            'carto-voyager': {
-              type: 'raster',
+            "carto-voyager": {
+              type: "raster",
               tiles: [
-                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                `https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?key=${CARTO_API_KEY}`,
+                `https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?key=${CARTO_API_KEY}`,
+                `https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png?key=${CARTO_API_KEY}`,
               ],
               tileSize: 256,
-              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
             },
           },
           layers: [
             {
-              id: 'carto-voyager-layer',
-              type: 'raster',
-              source: 'carto-voyager',
+              id: "carto-voyager-layer",
+              type: "raster",
+              source: "carto-voyager",
               minzoom: 0,
               maxzoom: 19,
             },
@@ -153,63 +125,66 @@ export default function RideNavigationMap({
       });
 
       // Add zoom and compass controls
-      map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+      map.addControl(
+        new maplibregl.NavigationControl({ showCompass: true, showZoom: true }),
+        "top-right",
+      );
       map.addControl(
         new maplibregl.AttributionControl({
           compact: true,
         }),
-        'bottom-right'
+        "bottom-right",
       );
 
-      map.on('load', () => {
+      map.on("load", () => {
         setIsMapLoading(false);
 
         // Add empty route source & layers
-        if (!map.getSource('route-source')) {
-          map.addSource('route-source', {
-            type: 'geojson',
+        if (!map.getSource("route-source")) {
+          map.addSource("route-source", {
+            type: "geojson",
             data: {
-              type: 'FeatureCollection',
+              type: "FeatureCollection",
               features: [],
             },
           });
 
           // Route casing (darker border for high contrast)
           map.addLayer({
-            id: 'route-casing',
-            type: 'line',
-            source: 'route-source',
+            id: "route-casing",
+            type: "line",
+            source: "route-source",
             layout: {
-              'line-join': 'round',
-              'line-cap': 'round',
+              "line-join": "round",
+              "line-cap": "round",
             },
             paint: {
-              'line-color': '#064e3b',
-              'line-width': 8,
-              'line-opacity': 0.7,
+              "line-color": "#064e3b",
+              "line-width": 8,
+              "line-opacity": 0.7,
             },
           });
 
           // Route line (vibrant emerald)
           map.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: 'route-source',
+            id: "route-line",
+            type: "line",
+            source: "route-source",
             layout: {
-              'line-join': 'round',
-              'line-cap': 'round',
+              "line-join": "round",
+              "line-cap": "round",
             },
             paint: {
-              'line-color': '#10b981',
-              'line-width': 5,
-              'line-opacity': 0.95,
+              "line-color": "#10b981",
+              "line-width": 5,
+              "line-opacity": 0.95,
             },
           });
         }
       });
 
       // Map Click Handler for interactive coordinate picking
-      map.on('click', async (e) => {
+      map.on("click", async (e) => {
         const clickedLngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
         // Reverse geocode or create fallback label
@@ -217,13 +192,13 @@ export default function RideNavigationMap({
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickedLngLat[1]}&lon=${clickedLngLat[0]}`,
-            { headers: { 'Accept-Language': 'en' } }
+            { headers: { "Accept-Language": "en" } },
           );
           if (res.ok) {
             const data = await res.json();
             if (data.display_name) {
-              const parts = data.display_name.split(',');
-              resolvedLabel = parts.slice(0, 2).join(',').trim();
+              const parts = data.display_name.split(",");
+              resolvedLabel = parts.slice(0, 2).join(",").trim();
             }
           }
         } catch {
@@ -238,7 +213,7 @@ export default function RideNavigationMap({
 
       mapInstanceRef.current = map;
     } catch (err) {
-      console.error('Failed to initialize MapLibre:', err);
+      console.error("Failed to initialize MapLibre:", err);
       setIsMapLoading(false);
     }
 
@@ -253,7 +228,7 @@ export default function RideNavigationMap({
   // Update pickup marker on originCoords change
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || isMapLoading) return;
 
     if (!originCoords) {
       if (originMarkerRef.current) {
@@ -264,8 +239,8 @@ export default function RideNavigationMap({
     }
 
     if (!originMarkerRef.current) {
-      const el = document.createElement('div');
-      el.className = 'pickup-marker';
+      const el = document.createElement("div");
+      el.className = "pickup-marker";
       el.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#059669; border:3px solid #ffffff; border-radius:50%; box-shadow:0 4px 12px rgba(5,150,105,0.45); cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -277,17 +252,21 @@ export default function RideNavigationMap({
 
       originMarkerRef.current = new maplibregl.Marker({ element: el })
         .setLngLat(originCoords)
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setHTML('<div class="p-1 font-bold text-xs text-neutral-800">Pickup Origin</div>'))
+        .setPopup(
+          new maplibregl.Popup({ offset: 20 }).setHTML(
+            '<div class="p-1 font-bold text-xs text-neutral-800">Pickup Origin</div>',
+          ),
+        )
         .addTo(map);
     } else {
       originMarkerRef.current.setLngLat(originCoords);
     }
-  }, [originCoords]);
+  }, [originCoords, isMapLoading]);
 
   // Update destination marker on destCoords change
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || isMapLoading) return;
 
     if (!destCoords) {
       if (destMarkerRef.current) {
@@ -298,8 +277,8 @@ export default function RideNavigationMap({
     }
 
     if (!destMarkerRef.current) {
-      const el = document.createElement('div');
-      el.className = 'dest-marker';
+      const el = document.createElement("div");
+      el.className = "dest-marker";
       el.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#e11d48; border:3px solid #ffffff; border-radius:50%; box-shadow:0 4px 12px rgba(225,29,72,0.45); cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -310,68 +289,60 @@ export default function RideNavigationMap({
 
       destMarkerRef.current = new maplibregl.Marker({ element: el })
         .setLngLat(destCoords)
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setHTML('<div class="p-1 font-bold text-xs text-neutral-800">Drop-off Destination</div>'))
+        .setPopup(
+          new maplibregl.Popup({ offset: 20 }).setHTML(
+            '<div class="p-1 font-bold text-xs text-neutral-800">Drop-off Destination</div>',
+          ),
+        )
         .addTo(map);
     } else {
       destMarkerRef.current.setLngLat(destCoords);
     }
-  }, [destCoords]);
+  }, [destCoords, isMapLoading]);
 
-  // Synchronize origin text with coordinates
+  // Keep selected locations visible immediately. Once both are selected,
+  // frame both points while OSRM calculates the road geometry.
   useEffect(() => {
-    let active = true;
-    if (!originText || !originText.trim()) {
-      setOriginCoords(null);
+    const map = mapInstanceRef.current;
+    if (!map || isMapLoading) return;
+
+    if (originCoords && destCoords) {
+      const bounds = new maplibregl.LngLatBounds();
+      bounds.extend(originCoords);
+      bounds.extend(destCoords);
+      map.fitBounds(bounds, {
+        padding: { top: 90, bottom: 90, left: 90, right: 90 },
+        maxZoom: 14.5,
+        duration: 800,
+      });
       return;
     }
 
-    const timer = setTimeout(async () => {
-      const resolved = await geocodeLocation(originText);
-      if (active && resolved) {
-        setOriginCoords(resolved);
-        if (!destCoords && mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo({ center: resolved, zoom: 14, essential: true });
-        }
-      }
-    }, 400);
-
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [originText, geocodeLocation]);
-
-  // Synchronize destination text with coordinates
-  useEffect(() => {
-    let active = true;
-    if (!destinationText || !destinationText.trim()) {
-      setDestCoords(null);
-      return;
+    const selectedPoint = originCoords ?? destCoords;
+    if (selectedPoint) {
+      map.flyTo({ center: selectedPoint, zoom: 14, essential: true });
     }
+  }, [originCoords, destCoords, isMapLoading]);
 
-    const timer = setTimeout(async () => {
-      const resolved = await geocodeLocation(destinationText);
-      if (active && resolved) {
-        setDestCoords(resolved);
-        if (!originCoords && mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo({ center: resolved, zoom: 14, essential: true });
-        }
-      }
-    }, 400);
+  // Coordinates come from an explicit autocomplete selection in the parent form.
+  // Do not geocode raw input text here: typing must not move the map prematurely.
+  useEffect(() => {
+    setOriginCoords(selectedOriginCoords ?? null);
+  }, [selectedOriginCoords]);
 
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [destinationText, geocodeLocation]);
+  useEffect(() => {
+    setDestCoords(selectedDestinationCoords ?? null);
+  }, [selectedDestinationCoords]);
 
   // Fetch actual road route from OSRM when both coordinates exist
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!originCoords || !destCoords || !map) {
-      if (map && map.getSource('route-source')) {
-        const source = map.getSource('route-source') as maplibregl.GeoJSONSource;
-        source.setData({ type: 'FeatureCollection', features: [] });
+    if (!originCoords || !destCoords || !map || isMapLoading) {
+      if (map && map.getSource("route-source")) {
+        const source = map.getSource(
+          "route-source",
+        ) as maplibregl.GeoJSONSource;
+        source.setData({ type: "FeatureCollection", features: [] });
       }
       setRouteMetrics(null);
       setRoutingError(null);
@@ -387,43 +358,55 @@ export default function RideNavigationMap({
         const url = `https://router.project-osrm.org/route/v1/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         if (!res.ok) {
-          throw new Error('OSRM routing service unavailable');
+          throw new Error("OSRM routing service unavailable");
         }
 
         const data = await res.json();
         if (!isSubscribed) return;
 
-        if (data.code === 'Ok' && Array.isArray(data.routes) && data.routes.length > 0) {
+        if (
+          data.code === "Ok" &&
+          Array.isArray(data.routes) &&
+          data.routes.length > 0
+        ) {
           const mainRoute = data.routes[0];
           const distanceKm = parseFloat((mainRoute.distance / 1000).toFixed(1));
-          const durationMinutes = Math.max(1, Math.round(mainRoute.duration / 60));
+          const durationMinutes = Math.max(
+            1,
+            Math.round(mainRoute.duration / 60),
+          );
 
           setRouteMetrics({
             distanceKm,
             durationMinutes,
-            summary: mainRoute.legs?.[0]?.summary || 'Fastest Route',
+            summary: mainRoute.legs?.[0]?.summary || "Fastest Route",
           });
 
           // Update Map Source with real road geometry
-          if (map.getSource('route-source')) {
-            const source = map.getSource('route-source') as maplibregl.GeoJSONSource;
+          if (map.getSource("route-source")) {
+            const source = map.getSource(
+              "route-source",
+            ) as maplibregl.GeoJSONSource;
             source.setData({
-              type: 'FeatureCollection',
+              type: "FeatureCollection",
               features: [
                 {
-                  type: 'Feature',
+                  type: "Feature",
                   properties: {},
                   geometry: mainRoute.geometry,
                 },
               ],
             });
+            map.triggerRepaint();
           }
 
           // Auto-fit bounds to route
           const coordinates = mainRoute.geometry.coordinates;
           if (coordinates.length > 0) {
             const bounds = new maplibregl.LngLatBounds();
-            coordinates.forEach((coord: [number, number]) => bounds.extend(coord));
+            coordinates.forEach((coord: [number, number]) =>
+              bounds.extend(coord),
+            );
             map.fitBounds(bounds, {
               padding: { top: 70, bottom: 70, left: 70, right: 70 },
               maxZoom: 15.5,
@@ -431,13 +414,13 @@ export default function RideNavigationMap({
             });
           }
         } else {
-          setRoutingError('No road route found between selected points.');
+          setRoutingError("No road route found between selected points.");
           setRouteMetrics(null);
         }
       } catch (err: any) {
         if (!isSubscribed) return;
-        console.warn('[RideMap] Routing error:', err);
-        setRoutingError('Road route calculation unavailable (network error)');
+        console.warn("[RideMap] Routing error:", err);
+        setRoutingError("Road route calculation unavailable (network error)");
         setRouteMetrics(null);
       } finally {
         if (isSubscribed) {
@@ -451,14 +434,14 @@ export default function RideNavigationMap({
     return () => {
       isSubscribed = false;
     };
-  }, [originCoords, destCoords]);
+  }, [originCoords, destCoords, isMapLoading]);
 
   // Handle setting location from click popup
-  const handleApplyClickLocation = (type: 'origin' | 'destination') => {
+  const handleApplyClickLocation = (type: "origin" | "destination") => {
     if (!clickPopupInfo) return;
     const { lngLat, label } = clickPopupInfo;
 
-    if (type === 'origin') {
+    if (type === "origin") {
       setOriginCoords(lngLat);
       onOriginSelect?.(label, lngLat);
     } else {
@@ -479,7 +462,9 @@ export default function RideNavigationMap({
   };
 
   return (
-    <div className={`relative w-full h-full min-h-[420px] rounded-3xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 shadow-inner ${className}`}>
+    <div
+      className={`relative w-full h-full min-h-[420px] rounded-3xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 shadow-inner ${className}`}
+    >
       {/* MapLibre Canvas Container */}
       <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
 
@@ -513,8 +498,12 @@ export default function RideNavigationMap({
                   <Milestone className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-neutral-400 block">Distance</span>
-                  <span className="text-sm font-black tracking-tight">{routeMetrics.distanceKm} km</span>
+                  <span className="text-[10px] font-semibold text-neutral-400 block">
+                    Distance
+                  </span>
+                  <span className="text-sm font-black tracking-tight">
+                    {routeMetrics.distanceKm} km
+                  </span>
                 </div>
               </div>
 
@@ -523,8 +512,12 @@ export default function RideNavigationMap({
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-neutral-400 block">Est. Time</span>
-                  <span className="text-sm font-black tracking-tight">{routeMetrics.durationMinutes} mins</span>
+                  <span className="text-[10px] font-semibold text-neutral-400 block">
+                    Est. Time
+                  </span>
+                  <span className="text-sm font-black tracking-tight">
+                    {routeMetrics.durationMinutes} mins
+                  </span>
                 </div>
               </div>
             </div>
@@ -587,14 +580,14 @@ export default function RideNavigationMap({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => handleApplyClickLocation('origin')}
+              onClick={() => handleApplyClickLocation("origin")}
               className="px-2.5 py-2 rounded-xl bg-[#B9573B] hover:bg-[#a34e34] text-white text-xs font-bold shadow-xs transition-colors"
             >
               Set Pickup
             </button>
             <button
               type="button"
-              onClick={() => handleApplyClickLocation('destination')}
+              onClick={() => handleApplyClickLocation("destination")}
               className="px-2.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-colors"
             >
               Set Drop-off
